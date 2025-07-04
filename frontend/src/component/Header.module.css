@@ -1,0 +1,17 @@
+.style_kart{
+  margin-right: 40px;
+  font-weight: bold;
+  font-size: 1.2rem;
+  font-family: 'Segoe UI', Tahoma,Verdana, sans-serif;
+  background-color:#9d00e6 !important;
+  border-radius: 40px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.header_elements{
+  font-weight: bold;
+}
+
+.input_box{
+  border: 2px solid black;
+}
