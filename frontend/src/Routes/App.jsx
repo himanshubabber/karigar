@@ -1,9 +1,9 @@
- import Header from "./components/Header";
- import Footer from "./components/Footer";
- import Occupations from "./components/Occupations";
- import Signup from "./pages/Signup_customer";
-import Signin from "./pages/Signin";
+
 import { Outlet } from "react-router-dom";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
+import Occupations from "../components/Occupations";
+
 
 
  const App=()=>{
