@@ -13,9 +13,6 @@ import Occupations from "../components/Occupations";
     <Header/>
     </div>
     <Occupations/>
-    {/* <Signup/>
-    <Signin/> */}
-    {/* <Outlet/> */}
     <Footer/>
     </>
    );

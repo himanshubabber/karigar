@@ -1,3 +1,5 @@
+import { useNavigate } from "react-router-dom";
+
 const occupations = [
   {
     title: 'Plumber',
@@ -27,8 +29,19 @@ const occupations = [
 ];
 
 const Occupations = () => {
-  return (
+
+  const navigate = useNavigate();
+  
+  return (<>
     <div className="container my-5">
+    <div className="text-center mb-4">
+        <button
+          className="fw-bold btn btn-warning px-5 py-3"
+          onClick={() => navigate("/service_req_form")}
+        >
+          Make a Request
+        </button>
+        </div>
       <h2 className="text-center mb-4 fw-bold">Our Services</h2>
       <div className="row g-4 justify-content-center">
         {occupations.map((occ, i) => (
@@ -48,6 +61,7 @@ const Occupations = () => {
         ))}
       </div>
     </div>
+    </>
   );
 };
 

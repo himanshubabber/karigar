@@ -57,7 +57,7 @@ const Service_req_form = () => {
     <div
       className="d-flex justify-content-center align-items-center vh-100"
       style={{
-        backgroundImage: `url('../public/landing_page.png')`,
+        backgroundImage: `url('/landing_page.png')`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat"
