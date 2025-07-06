@@ -1,4 +1,12 @@
 import React from "react";
+import { MdOutlineEdit } from "react-icons/md";
+import { FaSackDollar } from "react-icons/fa6";
+import { IoIosInformationCircle } from "react-icons/io";
+import { FaStar } from "react-icons/fa";
+import { FaCalendarAlt } from "react-icons/fa";
+import { MdVerifiedUser } from "react-icons/md";
+//import { GrDocumentVerified } from "react-icons/gr";
+import { TiTick } from "react-icons/ti";
 
 const Worker_middle = () => {
   const dummyWorker = {
@@ -35,11 +43,17 @@ const Worker_middle = () => {
         {/* Left Card */}
         <div className="col-md-8 mb-3">
           <div className="card p-4 shadow h-100 position-relative" style={{ borderRadius: "14px" }}>
-            {/* Online Badge */}
-            <div className="position-absolute top-0 end-0 p-3">
+            {/* Online Badge + Edit */}
+            <div className="position-absolute top-0 end-0 p-3 d-flex flex-column align-items-end">
               <span className={`badge ${isOnline ? "bg-success" : "bg-danger"} fs-5 px-3 py-2 rounded-pill`}>
                 {isOnline ? "Online" : "Offline"}
               </span>
+              <MdOutlineEdit
+                size={32}
+                className="mt-2"
+                style={{ cursor: "pointer", color: "#343a40" }}
+                title="Edit Profile"
+              />
             </div>
 
             {/* Profile Header */}
@@ -98,7 +112,9 @@ const Worker_middle = () => {
           {/* Wallet */}
           <div className="card text-center shadow flex-fill" style={{ borderRadius: "14px" }}>
             <div className="card-body d-flex flex-column justify-content-center">
-              <h4 className="fw-bold mb-3 fs-4">💰 Wallet</h4>
+              <h4 className="fw-bold mb-3 fs-4">
+                <FaSackDollar size={26} className="me-2 text-black" /> Wallet
+              </h4>
               <p className="fs-2 fw-bold text-success mb-0">₹ {walletBalance}</p>
             </div>
           </div>
@@ -106,16 +122,26 @@ const Worker_middle = () => {
           {/* Worker Info */}
           <div className="card text-center shadow flex-fill" style={{ borderRadius: "14px" }}>
             <div className="card-body d-flex flex-column justify-content-center">
-              <h4 className="fw-bold mb-3 fs-4">🧰 Worker Info</h4>
+              <h4 className="fw-bold mb-3 fs-4">
+              <IoIosInformationCircle size={26} className="me-2 text-black" />
+                 Worker Info</h4>
               <p className="fs-5 mb-2">
-                <strong>⭐ Rating:</strong> {rating}
+                <strong>
+                <FaStar className="me-2 text-warning" />
+                   Rating:</strong> {rating}
               </p>
               <p className="fs-5 mb-2">
-                <strong>📅 Experience:</strong> {yearOfExperience} yrs
+                <strong>
+                <FaCalendarAlt className="me-2 text-black" />
+                  Experience:
+                  </strong> {yearOfExperience} yrs
               </p>
               <p className="fs-5">
-                <strong>🔒 Verified:</strong>{" "}
+                <strong>
+                <MdVerifiedUser className="me-2 text-black" />
+                   Verified:</strong>{" "}
                 <span className={isVerified ? "text-success" : "text-danger"}>
+                {/* <TiTick className="me-2 text-green" /> */}
                   {isVerified ? "✅ Yes" : "❌ No"}
                 </span>
               </p>
