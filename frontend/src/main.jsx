@@ -10,6 +10,7 @@ import Signup_worker from './pages/Signup_worker.jsx';
 import Landing_page from './Routes/Landing_page.jsx';
 import Service_req_form from './Routes/Service_req_form.jsx';
 import Customer from './Routes/Customer.jsx'
+import Worker from './Routes/Worker.jsx';
 
 
 
@@ -35,6 +36,10 @@ const router = createBrowserRouter([
   {
     path: "/service_req_form",
     element: <Service_req_form/>,
+  },
+  {
+    path: "/worker",
+    element: <Worker/>,
   },
 ]);
 
