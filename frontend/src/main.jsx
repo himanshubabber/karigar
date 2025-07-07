@@ -12,8 +12,8 @@ import Service_req_form from './Routes/Service_req_form.jsx';
 import Customer from './Routes/Customer.jsx'
 import Worker from './Routes/Worker.jsx';
 import All_requests from './Routes/All_requests.jsx';
-import Location from './Routes/Location.jsx';
-import Location_map from './components/Location_map.jsx';
+import Location_workerside from './Routes/Location_workerside.jsx';
+import Location_userside from './Routes/Location_userside.jsx';
 
 
 
@@ -49,8 +49,12 @@ const router = createBrowserRouter([
    element: <All_requests/>,
   },
   {
-    path:"/location",
-    element:<Location/>,
+    path:"/location_worker",
+    element:<Location_workerside/>,
+  },
+  {
+    path:"/location_user",
+    element:<Location_userside/>,
   }
 ]);
 

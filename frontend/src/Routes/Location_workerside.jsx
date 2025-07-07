@@ -2,7 +2,7 @@ import Footer from "../components/Footer";
 import Header from "../components/Header";
 import Location_map from "../components/Location_map";
 
-const Location = () => {
+const Location_workerside = () => {
   return (
     <>
       <Header />
@@ -12,4 +12,4 @@ const Location = () => {
   );
 };
 
-export default Location;
+export default Location_workerside;

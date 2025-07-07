@@ -258,6 +258,8 @@ const Location_map = () => {
         </div>
       </div>
 
+      
+
       {/* Center Map */}
       <div
         style={{
