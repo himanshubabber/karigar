@@ -7,8 +7,15 @@ import { FaCalendarAlt } from "react-icons/fa";
 import { MdVerifiedUser } from "react-icons/md";
 //import { GrDocumentVerified } from "react-icons/gr";
 import { TiTick } from "react-icons/ti";
+import { useNavigate } from "react-router-dom";
 
 const Worker_middle = () => {
+
+  const navigate= useNavigate();
+
+  const handle_navigate=()=>{
+    navigate("/all_requests");
+  }
   const dummyWorker = {
     fullName: "Rohit Kumar",
     email: "rohit.kumar@example.com",
@@ -84,8 +91,14 @@ const Worker_middle = () => {
             </div>
 
             {/* Working Categories */}
-            <div>
-              <h5 className="fw-bold mb-3 fs-5">Working Categories:</h5>
+            <div >
+              <div className="d-flex justify-content-between">
+              <h5 className=" fw-bold mb-3 fs-5">Working Categories:</h5>
+              <button className="btn btn-warning ml-8"
+              onClick={handle_navigate}>
+                All Requests
+              </button>
+              </div>
               <div className="d-flex flex-wrap gap-3">
                 {workingCategory.map((cat, idx) => (
                   <span
