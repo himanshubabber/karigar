@@ -13,7 +13,7 @@ import {
     updateFullName
 } from "../controllers/worker.controller.js";
 import {upload} from "../middlewares/multer.middleware.js"
-import { verifyJWT } from "../middlewares/workerAuth.middleware.js";
+import {verifyJWT} from "../middlewares/workerAuth.middleware.js";
 
 
 const router = Router()

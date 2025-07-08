@@ -18,11 +18,16 @@ app.use(cookieParser())
 //routes import
 import customerRouter from "./routes/customer.route.js"
 import workerRouter from "./routes/worker.route.js"
+import serviceRequestRouter from "./routes/serviceRequest.route.js"
+import paymentRouter from "./routes/payment.route.js"
+
 
 
 //routes declaration
 app.use("/api/v1/customer", customerRouter)
 app.use("/api/v1/worker", workerRouter)
+app.use("/api/v1/service-request", serviceRequestRouter)
+app.use("/api/v1/payment", paymentRouter)
 
 
 // http://localhost:8000/api/v1/users/register
