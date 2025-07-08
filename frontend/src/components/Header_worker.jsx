@@ -1,13 +1,13 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-import { Navigate, useNavigate } from "react-router-dom";
-
-const Header_worker=()=>{
+const Header_worker = ({ isOnline }) => {
   const [location, setLocation] = useState('');
-  const navigate= useNavigate();
-  const handle_navigate=()=>{
+  const navigate = useNavigate();
+
+  const handle_navigate = () => {
     navigate('/all_requests');
-  }
+  };
 
   const detectLocation = () => {
     if (!navigator.geolocation) {
@@ -42,7 +42,6 @@ const Header_worker=()=>{
   return (
     <header className="bg-white shadow-sm border-bottom">
       <div className="container-fluid d-flex align-items-center py-2 px-2">
-        {/* Logo */}
         <a href="/" className="d-flex align-items-center text-dark text-decoration-none me-auto">
           <svg className="me-1" width="36" height="32" role="img" aria-label="Bootstrap">
             <use xlinkHref="#bootstrap" />
@@ -50,51 +49,46 @@ const Header_worker=()=>{
           <span className="fs-3 fw-bold">Karigar</span>
         </a>
 
-        <button className="btn btn-warning ml-8"
-              onClick={handle_navigate}>
-                All Requests
-              </button>
+        {/* Show All Requests only if Online */}
+        {isOnline && (
+          <button className="btn btn-warning ml-8" onClick={handle_navigate}>
+            All Requests
+          </button>
+        )}
 
-       {/* Nav + Location + Search + Profile */}
-       <div className="d-flex align-items-center gap-3 flex-nowrap">
-
-{/* Navigation */}
-<ul className="nav align-items-center">
-  <li className="nav-item dropdown me-2">
-    <a className="nav-link dropdown-toggle text-dark fw-medium" data-bs-toggle="dropdown" href="#">
-      Home Services
-    </a>
-    <ul className="dropdown-menu">
-      <li><a className="dropdown-item" href="#">Plumber</a></li>
-      <li><a className="dropdown-item" href="#">Electrician</a></li>
-      <li><a className="dropdown-item" href="#">Carpenter</a></li>
-      <li><a className="dropdown-item" href="#">Painter</a></li>
-    </ul>
-  </li>
-  <li className="nav-item dropdown me-2">
-    <a className="nav-link dropdown-toggle text-dark fw-medium" data-bs-toggle="dropdown" href="#">
-      Appliances
-    </a>
-    <ul className="dropdown-menu">
-      <li><a className="dropdown-item" href="#">TV</a></li>
-      <li><a className="dropdown-item" href="#">Fridge</a></li>
-      <li><a className="dropdown-item" href="#">AC</a></li>
-      <li><a className="dropdown-item" href="#">Washing Machine</a></li>
-    </ul>
-  </li>
-  <li className="nav-item dropdown me-2">
-    <a className="nav-link dropdown-toggle text-dark fw-medium" data-bs-toggle="dropdown" href="#">
-      Electronics
-    </a>
-    <ul className="dropdown-menu">
-      <li><a className="dropdown-item" href="#">Laptop</a></li>
-    </ul>
-  </li>
-  {/* <li className="nav-item">
-    <a className="nav-link text-dark fw-medium" href="#">More</a>
-  </li> */}
-   </ul>
-
+        <div className="d-flex align-items-center gap-3 flex-nowrap">
+          <ul className="nav align-items-center">
+            <li className="nav-item dropdown me-2">
+              <a className="nav-link dropdown-toggle text-dark fw-medium" data-bs-toggle="dropdown" href="#">
+                Home Services
+              </a>
+              <ul className="dropdown-menu">
+                <li><a className="dropdown-item" href="#">Plumber</a></li>
+                <li><a className="dropdown-item" href="#">Electrician</a></li>
+                <li><a className="dropdown-item" href="#">Carpenter</a></li>
+                <li><a className="dropdown-item" href="#">Painter</a></li>
+              </ul>
+            </li>
+            <li className="nav-item dropdown me-2">
+              <a className="nav-link dropdown-toggle text-dark fw-medium" data-bs-toggle="dropdown" href="#">
+                Appliances
+              </a>
+              <ul className="dropdown-menu">
+                <li><a className="dropdown-item" href="#">TV</a></li>
+                <li><a className="dropdown-item" href="#">Fridge</a></li>
+                <li><a className="dropdown-item" href="#">AC</a></li>
+                <li><a className="dropdown-item" href="#">Washing Machine</a></li>
+              </ul>
+            </li>
+            <li className="nav-item dropdown me-2">
+              <a className="nav-link dropdown-toggle text-dark fw-medium" data-bs-toggle="dropdown" href="#">
+                Electronics
+              </a>
+              <ul className="dropdown-menu">
+                <li><a className="dropdown-item" href="#">Laptop</a></li>
+              </ul>
+            </li>
+          </ul>
 
           {/* Location Input */}
           <div className="d-flex align-items-center" style={{ maxWidth: '260px' }}>
@@ -124,7 +118,7 @@ const Header_worker=()=>{
             />
           </form>
 
-          {/* Profile Dropdown */}
+          {/* Profile */}
           <div className="dropdown">
             <a
               href="#"
@@ -151,6 +145,6 @@ const Header_worker=()=>{
       </div>
     </header>
   );
-}
+};
 
 export default Header_worker;

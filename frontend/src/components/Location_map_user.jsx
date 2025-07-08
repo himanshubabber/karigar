@@ -85,6 +85,12 @@ const Location_map_user = () => {
     workingCategory: ["plumber", "ac", "laptop", "electrician"],
   };
 
+  // 🟢 Start location tracking immediately on mount
+  useEffect(() => {
+    setTrack(true);
+  }, []);
+
+  // 🛰️ Track worker location
   useEffect(() => {
     let watchId;
     if (track) {
@@ -178,7 +184,7 @@ const Location_map_user = () => {
             />
           </div>
 
-          {/* Locate + Cancel Buttons */}
+          {/* Cancel Options */}
           <div
             style={{
               display: "flex",
@@ -189,14 +195,6 @@ const Location_map_user = () => {
               paddingTop: "40px",
             }}
           >
-            <button
-              className="btn btn-primary"
-              style={{ width: "230px", fontWeight: "bold" }}
-              onClick={() => setTrack(true)}
-            >
-              Locate Worker
-            </button>
-
             {!showCancelOptions ? (
               <button
                 className="btn btn-danger"
