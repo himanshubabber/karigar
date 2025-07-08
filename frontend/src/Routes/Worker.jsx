@@ -1,11 +1,11 @@
 import Footer from "../components/Footer";
-import Header from "../components/Header";
+import Header_worker from "../components/Header_worker";
 import Worker_middle from "../components/Worker_middle";
 
 const Worker=()=>{
    return (
         <>
-        <Header/>
+        <Header_worker/>
         <Worker_middle/>
         <Footer/>
         </>

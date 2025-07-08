@@ -1,22 +1,20 @@
-import React from "react";
+import React, { useState } from "react";
 import { MdOutlineEdit } from "react-icons/md";
 import { FaSackDollar } from "react-icons/fa6";
 import { IoIosInformationCircle } from "react-icons/io";
 import { FaStar } from "react-icons/fa";
 import { FaCalendarAlt } from "react-icons/fa";
 import { MdVerifiedUser } from "react-icons/md";
-//import { GrDocumentVerified } from "react-icons/gr";
-import { TiTick } from "react-icons/ti";
 import { useNavigate } from "react-router-dom";
 
 const Worker_middle = () => {
+  const navigate = useNavigate();
 
-  const navigate= useNavigate();
-
-  const handle_navigate=()=>{
+  const handle_navigate = () => {
     navigate("/all_requests");
-  }
-  const dummyWorker = {
+  };
+
+  const [worker, setWorker] = useState({
     fullName: "Rohit Kumar",
     email: "rohit.kumar@example.com",
     phone: "9876543210",
@@ -29,7 +27,7 @@ const Worker_middle = () => {
     rating: 4.8,
     yearOfExperience: 5,
     workingCategory: ["plumber", "ac", "laptop", "electrician"],
-  };
+  });
 
   const {
     fullName,
@@ -42,7 +40,11 @@ const Worker_middle = () => {
     isVerified,
     isOnline,
     workingCategory,
-  } = dummyWorker;
+  } = worker;
+
+  const toggleOnlineStatus = () => {
+    setWorker((prev) => ({ ...prev, isOnline: !prev.isOnline }));
+  };
 
   return (
     <div className="container mt-4">
@@ -90,15 +92,19 @@ const Worker_middle = () => {
               </div>
             </div>
 
-            {/* Working Categories */}
-            <div >
-              <div className="d-flex justify-content-between">
-              <h5 className=" fw-bold mb-3 fs-5">Working Categories:</h5>
-              <button className="btn btn-warning ml-8"
-              onClick={handle_navigate}>
-                All Requests
-              </button>
+            {/* Working Categories + Toggle */}
+            <div>
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h5 className="fw-bold fs-5">Working Categories:</h5>
+                <button
+                  onClick={toggleOnlineStatus}
+                  className={`btn btn-sm fw-bold ${isOnline ? "btn-success" : "btn-outline-danger"}`}
+                  style={{ borderRadius: "20px", padding: "6px 16px" }}
+                >
+                  {isOnline ? "Go Offline" : "Go Online"}
+                </button>
               </div>
+
               <div className="d-flex flex-wrap gap-3">
                 {workingCategory.map((cat, idx) => (
                   <span
@@ -136,25 +142,29 @@ const Worker_middle = () => {
           <div className="card text-center shadow flex-fill" style={{ borderRadius: "14px" }}>
             <div className="card-body d-flex flex-column justify-content-center">
               <h4 className="fw-bold mb-3 fs-4">
-              <IoIosInformationCircle size={26} className="me-2 text-black" />
-                 Worker Info</h4>
+                <IoIosInformationCircle size={26} className="me-2 text-black" />
+                Worker Info
+              </h4>
               <p className="fs-5 mb-2">
                 <strong>
-                <FaStar className="me-2 text-warning" />
-                   Rating:</strong> {rating}
+                  <FaStar className="me-2 text-warning" />
+                  Rating:
+                </strong>{" "}
+                {rating}
               </p>
               <p className="fs-5 mb-2">
                 <strong>
-                <FaCalendarAlt className="me-2 text-black" />
+                  <FaCalendarAlt className="me-2 text-black" />
                   Experience:
-                  </strong> {yearOfExperience} yrs
+                </strong>{" "}
+                {yearOfExperience} yrs
               </p>
               <p className="fs-5">
                 <strong>
-                <MdVerifiedUser className="me-2 text-black" />
-                   Verified:</strong>{" "}
+                  <MdVerifiedUser className="me-2 text-black" />
+                  Verified:
+                </strong>{" "}
                 <span className={isVerified ? "text-success" : "text-danger"}>
-                {/* <TiTick className="me-2 text-green" /> */}
                   {isVerified ? "✅ Yes" : "❌ No"}
                 </span>
               </p>
