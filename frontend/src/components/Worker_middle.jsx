@@ -1,28 +1,25 @@
-import React, { useState } from "react";
+import React from "react";
 import { MdOutlineEdit } from "react-icons/md";
 import { FaSackDollar } from "react-icons/fa6";
 import { IoIosInformationCircle } from "react-icons/io";
 import { FaStar, FaCalendarAlt } from "react-icons/fa";
 import { MdVerifiedUser } from "react-icons/md";
+import { useNavigate } from "react-router-dom";
 
-const Worker_middle = ({ isOnline, setIsOnline }) => {
-  const [worker] = useState({
-    fullName: "Rohit Kumar",
-    email: "rohit.kumar@example.com",
-    phone: "9876543210",
-    address: "DLF Phase 2, Gurugram, Haryana",
-    profilePhoto:
-      "https://t4.ftcdn.net/jpg/03/64/21/11/360_F_364211147_1qgLVxv1Tcq0Ohz3FawUfrtONzz8nq3e.jpg",
-    walletBalance: 350,
-    isVerified: true,
-    rating: 4.8,
-    yearOfExperience: 5,
-    workingCategory: ["plumber", "ac", "laptop", "electrician"],
-  });
+const Worker_middle = ({ isOnline, setIsOnline, worker }) => {
+  const navigate = useNavigate();
 
   const toggleOnlineStatus = () => {
     setIsOnline((prev) => !prev);
   };
+
+  if (!worker) {
+    return (
+      <div className="container text-center mt-5">
+        <h4>Loading worker data...</h4>
+      </div>
+    );
+  }
 
   return (
     <div className="container mt-4">
@@ -30,7 +27,6 @@ const Worker_middle = ({ isOnline, setIsOnline }) => {
         {/* Left Card */}
         <div className="col-md-8 mb-3">
           <div className="card p-4 shadow h-100 position-relative" style={{ borderRadius: "14px" }}>
-            {/* Online Badge + Edit */}
             <div className="position-absolute top-0 end-0 p-3 d-flex flex-column align-items-end">
               <span
                 className={`badge ${isOnline ? "bg-success" : "bg-danger"} fs-5 px-3 py-2 rounded-pill`}
@@ -42,10 +38,10 @@ const Worker_middle = ({ isOnline, setIsOnline }) => {
                 className="mt-2"
                 style={{ cursor: "pointer", color: "#343a40" }}
                 title="Edit Profile"
+                onClick={() => navigate("/edit_worker", { state: worker })}
               />
             </div>
 
-            {/* Profile Header */}
             <div className="d-flex align-items-center mb-4">
               <div
                 style={{
@@ -58,7 +54,10 @@ const Worker_middle = ({ isOnline, setIsOnline }) => {
                 }}
               >
                 <img
-                  src={worker.profilePhoto}
+                  src={
+                    worker.profilePhoto ||
+                    "https://thumbs.dreamstime.com/b/profile-picture-caucasian-male-employee-posing-office-happy-young-worker-look-camera-workplace-headshot-portrait-smiling-190186649.jpg"
+                  }
                   alt="Profile"
                   style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 />
@@ -71,7 +70,6 @@ const Worker_middle = ({ isOnline, setIsOnline }) => {
               </div>
             </div>
 
-            {/* Categories + Toggle */}
             <div>
               <div className="d-flex justify-content-between align-items-center mb-3">
                 <h5 className="fw-bold fs-5">Working Categories:</h5>
@@ -81,7 +79,7 @@ const Worker_middle = ({ isOnline, setIsOnline }) => {
                   style={{
                     borderRadius: "20px",
                     padding: "6px 16px",
-                    backgroundColor: isOnline ? "#dc3545" : "#198754", // red for offline, dark green for online
+                    backgroundColor: isOnline ? "#dc3545" : "#198754",
                     color: "#fff",
                     border: `2px solid ${isOnline ? "#dc3545" : "#198754"}`,
                   }}
@@ -91,7 +89,7 @@ const Worker_middle = ({ isOnline, setIsOnline }) => {
               </div>
 
               <div className="d-flex flex-wrap gap-3 mb-3">
-                {worker.workingCategory.map((cat, idx) => (
+                {worker.workingCategory?.map((cat, idx) => (
                   <span
                     key={idx}
                     className="badge bg-primary text-light"
@@ -113,17 +111,15 @@ const Worker_middle = ({ isOnline, setIsOnline }) => {
 
         {/* Right Cards */}
         <div className="col-md-4 d-flex flex-column gap-3">
-          {/* Wallet */}
           <div className="card text-center shadow flex-fill" style={{ borderRadius: "14px" }}>
             <div className="card-body d-flex flex-column justify-content-center">
               <h4 className="fw-bold mb-3 fs-4">
                 <FaSackDollar size={26} className="me-2 text-black" /> Wallet
               </h4>
-              <p className="fs-2 fw-bold text-success mb-0">₹ {worker.walletBalance}</p>
+              <p className="fs-2 fw-bold text-success mb-0">₹ {worker.walletBalance || 0}</p>
             </div>
           </div>
 
-          {/* Info */}
           <div className="card text-center shadow flex-fill" style={{ borderRadius: "14px" }}>
             <div className="card-body d-flex flex-column justify-content-center">
               <h4 className="fw-bold mb-3 fs-4">
@@ -134,13 +130,13 @@ const Worker_middle = ({ isOnline, setIsOnline }) => {
                 <strong>
                   <FaStar className="me-2 text-warning" /> Rating:
                 </strong>{" "}
-                {worker.rating}
+                {worker.rating || "N/A"}
               </p>
               <p className="fs-5 mb-2">
                 <strong>
                   <FaCalendarAlt className="me-2 text-black" /> Experience:
                 </strong>{" "}
-                {worker.yearOfExperience} yrs
+                {worker.yearOfExperience || 0} yrs
               </p>
               <p className="fs-5">
                 <strong>

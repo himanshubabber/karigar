@@ -24,6 +24,7 @@ import { GiMultiDirections } from "react-icons/gi";
 import { TiPin } from "react-icons/ti";
 import { MdOutlineDirectionsRun } from "react-icons/md";
 import { FiMapPin } from "react-icons/fi";
+import { Navigate, useNavigate } from "react-router-dom";
 
 
 
@@ -119,7 +120,8 @@ const Location_map = () => {
     audioNoteUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
     customerLocation: { coordinates: [77.1025, 28.7041] },
   };
-
+  
+  const navigate= useNavigate();
   useEffect(() => {
     let watchId;
     if (track) {
@@ -242,15 +244,30 @@ const Location_map = () => {
               </button>
 
               {!showCancelOptions ? (
-                <button className="btn btn-danger" style={{ width: "100%" }} onClick={() => setShowCancelOptions(true)}>
-                  Cancel
-                </button>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                  <button className="btn btn-warning">Don't want to proceed</button>
-                  <button className="btn btn-secondary">Customer not responding</button>
-                </div>
-              )}
+  <button
+    className="btn btn-danger"
+    style={{ width: "100%" }}
+    onClick={() => setShowCancelOptions(true)}
+  >
+    Cancel
+  </button>
+) : (
+  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+    <button
+      className="btn btn-warning"
+      onClick={() => navigate("/worker")}
+    >
+      Don't want to proceed
+    </button>
+    <button
+      className="btn btn-secondary"
+      onClick={() => navigate("/worker")}
+    >
+      Customer not responding
+    </button>
+  </div>
+)}
+
             </>
           ) : (
             <p className="text-muted">Waiting for your location...</p>

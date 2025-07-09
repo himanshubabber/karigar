@@ -14,7 +14,8 @@ import Worker from './Routes/Worker.jsx';
 import All_requests from './Routes/All_requests.jsx';
 import Location_workerside from './Routes/Location_workerside.jsx';
 import Location_userside from './Routes/Location_userside.jsx';
-
+import Edit_worker from './components/Edit_worker.jsx';
+import { WorkerProvider } from './Context/Worker_context.jsx';
 
 
 const router = createBrowserRouter([
@@ -55,12 +56,18 @@ const router = createBrowserRouter([
   {
     path:"/location_user",
     element:<Location_userside/>,
+  },
+  {
+    path:"/edit_worker",
+    element:<Edit_worker/>
   }
 ]);
 
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
+    <WorkerProvider>
    <RouterProvider router={router}   />
+   </WorkerProvider>
   </StrictMode>,
 )

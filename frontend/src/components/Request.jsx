@@ -1,6 +1,9 @@
 import React, { useState } from "react";
+import { Navigate, useNavigate } from "react-router-dom";
 
 const Request = ({ request, onAccept }) => {
+
+   const navigate=useNavigate();
   const {
     _id,
     category,
@@ -17,6 +20,7 @@ const Request = ({ request, onAccept }) => {
   const [accepted, setAccepted] = useState(false);
 
   const handleAccept = () => {
+    navigate('/location_worker')
     setAccepted(true);
     onAccept(_id);
   };
@@ -47,28 +51,17 @@ const Request = ({ request, onAccept }) => {
         </div>
       )}
 
-      {!accepted && (
+{!accepted ? (
         <div className="text-end mt-2">
           <button className="btn btn-success" onClick={handleAccept}>
             Accept
           </button>
         </div>
-      )}
-
-      {accepted && (
-        <div className="mt-4 border-top pt-3">
-          <p className="mb-1">
-            <strong>Status:</strong> {orderStatus}
-          </p>
-          <p className="mb-1">
-            <strong>Job Status:</strong> {jobStatus}
-          </p>
-          <p className="mb-1">
-            <strong>Payment:</strong> {paymentStatus}
-          </p>
-          <p className="text-muted mb-0">
-            <small>Requested: {new Date(createdAt).toLocaleString()}</small>
-          </p>
+      ) : (
+        <div className="text-end mt-3">
+          <button className="btn btn-primary" onClick={handleSubmit}>
+            Submit
+          </button>
         </div>
       )}
     </div>

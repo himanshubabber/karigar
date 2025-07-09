@@ -1,7 +1,12 @@
 import { useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { useWorker } from "../Context/Worker_context";
 
 const Signin_worker = () => {
+  const navigate = useNavigate();
+  const { setWorker } = useWorker();
+
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -26,8 +31,11 @@ const Signin_worker = () => {
       const res = await axios.post("/api/v1/worker/login", form, {
         withCredentials: true,
       });
+
+      const worker = res.data?.data?.worker;
+      setWorker(worker);
       alert("Login successful!");
-      console.log(res.data);
+      navigate("/worker", { state: worker });
     } catch (err) {
       console.error(err);
       alert("Login failed: " + (err.response?.data?.message || err.message));

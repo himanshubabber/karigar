@@ -1,5 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
+import { Navigate, useNavigate } from "react-router-dom";
 
 const categories = [
   "plumber",
@@ -12,6 +13,8 @@ const categories = [
 ];
 
 const Signup_worker = () => {
+
+  const navigate= useNavigate();
   const [form, setForm] = useState({
     fullName: "",
     email: "",
@@ -85,6 +88,7 @@ const Signup_worker = () => {
         try {
           const res = await axios.post("/api/v1/worker/register", dataToSend);
           alert("Worker signed up successfully!");
+          navigate('/signin');
           console.log(res.data);
         } catch (err) {
           console.error("Signup failed", err);
