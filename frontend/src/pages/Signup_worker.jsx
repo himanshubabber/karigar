@@ -23,10 +23,9 @@ const Signup_worker = () => {
   });
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
     setForm((prev) => ({
       ...prev,
-      [name]: name === "yearOfExperience" ? parseInt(value || 0) : value,
+      [e.target.name]: e.target.value,
     }));
   };
 
@@ -42,7 +41,6 @@ const Signup_worker = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const {
       fullName,
       email,
@@ -50,13 +48,14 @@ const Signup_worker = () => {
       address,
       password,
       workingCategory,
+      yearOfExperience,
     } = form;
 
     if (
-      !fullName.trim() ||
-      !email.trim() ||
-      !phone.trim() ||
-      !address.trim() ||
+      !fullName ||
+      !email ||
+      !phone ||
+      !address ||
       password.length < 8 ||
       workingCategory.length === 0
     ) {
@@ -64,14 +63,39 @@ const Signup_worker = () => {
       return;
     }
 
-    try {
-      const res = await axios.post("/api/v1/worker/register", form); // 🔥 Vite proxy will forward this
-      alert("Worker signed up successfully!");
-      console.log(res.data);
-    } catch (err) {
-      console.error(err);
-      alert("Signup failed: " + (err.response?.data?.message || err.message));
-    }
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const dataToSend = {
+          fullName,
+          email,
+          phone,
+          address,
+          password,
+          yearOfExperience,
+          workingCategory,
+          startLocation: {
+            type: "Point",
+            coordinates: [
+              position.coords.longitude,
+              position.coords.latitude,
+            ],
+          },
+        };
+
+        try {
+          const res = await axios.post("/api/v1/worker/register", dataToSend);
+          alert("Worker signed up successfully!");
+          console.log(res.data);
+        } catch (err) {
+          console.error("Signup failed", err);
+          alert("Signup failed: " + (err.response?.data?.message || err.message));
+        }
+      },
+      (err) => {
+        console.error("Geolocation error", err);
+        alert("Location access is required for signup.");
+      }
+    );
   };
 
   return (
@@ -90,7 +114,6 @@ const Signup_worker = () => {
                 onChange={handleChange}
               />
             </div>
-
             <div className="mb-2">
               <label className="form-label">Email</label>
               <input
@@ -101,7 +124,6 @@ const Signup_worker = () => {
                 onChange={handleChange}
               />
             </div>
-
             <div className="mb-2">
               <label className="form-label">Phone</label>
               <input
@@ -113,7 +135,6 @@ const Signup_worker = () => {
                 placeholder="10-digit number"
               />
             </div>
-
             <div className="mb-2">
               <label className="form-label">Address</label>
               <input
@@ -124,7 +145,6 @@ const Signup_worker = () => {
                 onChange={handleChange}
               />
             </div>
-
             <div className="mb-2">
               <label className="form-label">Password</label>
               <input
@@ -136,7 +156,6 @@ const Signup_worker = () => {
                 placeholder="At least 8 characters"
               />
             </div>
-
             <div className="mb-2">
               <label className="form-label">Years of Experience</label>
               <input
@@ -148,7 +167,6 @@ const Signup_worker = () => {
                 min={0}
               />
             </div>
-
             <div className="mb-3">
               <label className="form-label">Working Categories</label>
               <div className="d-flex flex-wrap gap-2">
@@ -169,7 +187,6 @@ const Signup_worker = () => {
                 ))}
               </div>
             </div>
-
             <button type="submit" className="btn btn-primary w-100">
               Sign Up
             </button>

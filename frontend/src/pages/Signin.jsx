@@ -1,50 +1,67 @@
 import { useState } from "react";
+import axios from "axios";
 
-const Signin = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+const Signin_worker = () => {
+  const [form, setForm] = useState({
+    email: "",
+    password: "",
+  });
 
-  const handleSignup = (e) => {
+  const handleChange = (e) => {
+    setForm((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Basic validation
-    if ( !email || password.length < 6) {
-      alert("Please fill all fields correctly.");
+
+    if (!form.email || !form.password) {
+      alert("Both fields are required.");
       return;
     }
-    alert("Signup successful!");
+
+    try {
+      const res = await axios.post("/api/v1/worker/login", form, {
+        withCredentials: true,
+      });
+      alert("Login successful!");
+      console.log(res.data);
+    } catch (err) {
+      console.error(err);
+      alert("Login failed: " + (err.response?.data?.message || err.message));
+    }
   };
 
   return (
     <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
-      <div className="card shadow" style={{ width: "24rem" }}>
+      <div className="card shadow" style={{ width: "28rem" }}>
         <div className="card-body">
-          <h4 className="card-title text-center mb-4">Sign In</h4>
-          <form onSubmit={handleSignup}>
-
+          <h3 className="text-center mb-4">Worker Login</h3>
+          <form onSubmit={handleSubmit}>
             <div className="mb-3">
-              <label className="form-label">Email address</label>
+              <label className="form-label">Email</label>
               <input
                 type="email"
+                name="email"
                 className="form-control"
-                placeholder="name@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={form.email}
+                onChange={handleChange}
               />
             </div>
-
-            <div className="mb-4">
+            <div className="mb-3">
               <label className="form-label">Password</label>
               <input
                 type="password"
+                name="password"
                 className="form-control"
-                placeholder="Min 6 characters"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={form.password}
+                onChange={handleChange}
               />
             </div>
-
             <button type="submit" className="btn btn-primary w-100">
-              Sign In 
+              Sign In
             </button>
           </form>
         </div>
@@ -53,4 +70,4 @@ const Signin = () => {
   );
 };
 
-export default Signin;
+export default Signin_worker;

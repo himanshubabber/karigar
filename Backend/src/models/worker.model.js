@@ -66,47 +66,55 @@ const workerSchema = new mongoose.Schema(
       required: true,
     },
     startLocation: {
-      type: {
-        type: String,
-        enum: ["Point"],
+  type: {
+    type: String,
+    enum: ["Point"],
+    default: undefined, // allow absence of type
+    required: false
+  },
+  coordinates: {
+    type: [Number],
+    validate: {
+      validator: function (value) {
+        if (!value || value.length === 0) return true; // allow missing or empty
+        return (
+          Array.isArray(value) &&
+          value.length === 2 &&
+          typeof value[0] === "number" &&
+          typeof value[1] === "number"
+        );
       },
-      coordinates: {
-        type: [Number],
-        validate: {
-          validator: function (value) {
-            if (!value) return true; // allow missing
-            return (
-              Array.isArray(value) &&
-              value.length === 2 &&
-              typeof value[0] === "number" &&
-              typeof value[1] === "number"
-            );
-          },
-          message: "Coordinates must be [longitude, latitude]",
-        },
+      message: "Coordinates must be [longitude, latitude]",
+    },
+    default: undefined,
+    required: false
+  },
+},
+currentLocation: {
+  type: {
+    type: String,
+    enum: ["Point"],
+    default: undefined,
+    required: false
+  },
+  coordinates: {
+    type: [Number],
+    validate: {
+      validator: function (value) {
+        if (!value || value.length === 0) return true;
+        return (
+          Array.isArray(value) &&
+          value.length === 2 &&
+          typeof value[0] === "number" &&
+          typeof value[1] === "number"
+        );
       },
-    }, 
-    currentLocation: {
-      type: {
-        type: String,
-        enum: ["Point"],
-      },
-      coordinates: {
-        type: [Number],
-        validate: {
-          validator: function (value) {
-            if (!value) return true; // allow missing
-            return (
-              Array.isArray(value) &&
-              value.length === 2 &&
-              typeof value[0] === "number" &&
-              typeof value[1] === "number"
-            );
-          },
-          message: "Coordinates must be [longitude, latitude]",
-        },
-      },
-    }, //ud.....................
+      message: "Coordinates must be [longitude, latitude]",
+    },
+    default: undefined,
+    required: false
+  },
+},//ud.....................
     profilePhoto: {
       type: String, // URL to image
       default: "",
