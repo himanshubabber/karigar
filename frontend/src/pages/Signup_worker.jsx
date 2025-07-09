@@ -23,9 +23,10 @@ const Signup_worker = () => {
   });
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
     setForm((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [name]: name === "yearOfExperience" ? parseInt(value || 0) : value,
     }));
   };
 
@@ -41,6 +42,7 @@ const Signup_worker = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     const {
       fullName,
       email,
@@ -51,10 +53,10 @@ const Signup_worker = () => {
     } = form;
 
     if (
-      !fullName ||
-      !email ||
-      !phone ||
-      !address ||
+      !fullName.trim() ||
+      !email.trim() ||
+      !phone.trim() ||
+      !address.trim() ||
       password.length < 8 ||
       workingCategory.length === 0
     ) {
@@ -63,7 +65,7 @@ const Signup_worker = () => {
     }
 
     try {
-      const res = await axios.post("/api/worker/signup", form);
+      const res = await axios.post("/api/v1/worker/register", form); // 🔥 Vite proxy will forward this
       alert("Worker signed up successfully!");
       console.log(res.data);
     } catch (err) {
@@ -88,6 +90,7 @@ const Signup_worker = () => {
                 onChange={handleChange}
               />
             </div>
+
             <div className="mb-2">
               <label className="form-label">Email</label>
               <input
@@ -98,6 +101,7 @@ const Signup_worker = () => {
                 onChange={handleChange}
               />
             </div>
+
             <div className="mb-2">
               <label className="form-label">Phone</label>
               <input
@@ -109,6 +113,7 @@ const Signup_worker = () => {
                 placeholder="10-digit number"
               />
             </div>
+
             <div className="mb-2">
               <label className="form-label">Address</label>
               <input
@@ -119,6 +124,7 @@ const Signup_worker = () => {
                 onChange={handleChange}
               />
             </div>
+
             <div className="mb-2">
               <label className="form-label">Password</label>
               <input
@@ -130,6 +136,7 @@ const Signup_worker = () => {
                 placeholder="At least 8 characters"
               />
             </div>
+
             <div className="mb-2">
               <label className="form-label">Years of Experience</label>
               <input
@@ -141,6 +148,7 @@ const Signup_worker = () => {
                 min={0}
               />
             </div>
+
             <div className="mb-3">
               <label className="form-label">Working Categories</label>
               <div className="d-flex flex-wrap gap-2">
