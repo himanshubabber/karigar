@@ -16,6 +16,7 @@ import Location_workerside from './Routes/Location_workerside.jsx';
 import Location_userside from './Routes/Location_userside.jsx';
 import Edit_worker from './components/Edit_worker.jsx';
 import { WorkerProvider } from './Context/Worker_context.jsx';
+import Signin_customer from './pages/signin_customer.jsx';
 
 
 const router = createBrowserRouter([
@@ -32,6 +33,10 @@ const router = createBrowserRouter([
   {
     path: "/signin",
     element: <Signin />,
+  },
+  {
+   path: "/signin_customer",
+   element: <Signin_customer/>,
   },
   {
     path: "/customer",

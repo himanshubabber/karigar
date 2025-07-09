@@ -1,31 +1,39 @@
 import { useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
-const Signup = () => {
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
-  const [password, setPassword] = useState("");
+const Signup_customer = () => {
+  const navigate = useNavigate();
+  const [form, setForm] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    address: "",
+    password: "",
+  });
+
+  const handleChange = (e) => {
+    setForm((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
 
   const handleSignup = async (e) => {
     e.preventDefault();
+    const { fullName, email, phone, address, password } = form;
+
     if (!fullName || !email || !phone || !address || password.length < 8) {
       alert("Please fill all fields correctly.");
       return;
     }
+    
 
     try {
-      const res = await axios.post("/api/customer/signup", {
-        fullName,
-        email,
-        phone,
-        address,
-        password,
-      });
-
+      const res = await axios.post("/api/v1/customer/register", form);
       alert("Signup successful!");
       console.log(res.data);
+      navigate("/signin_customer"); 
     } catch (err) {
       console.error(err);
       alert("Signup failed: " + (err.response?.data?.message || err.message));
@@ -43,8 +51,9 @@ const Signup = () => {
               <input
                 type="text"
                 className="form-control"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
+                name="fullName"
+                value={form.fullName}
+                onChange={handleChange}
                 placeholder="John Doe"
               />
             </div>
@@ -54,8 +63,9 @@ const Signup = () => {
               <input
                 type="email"
                 className="form-control"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                name="email"
+                value={form.email}
+                onChange={handleChange}
                 placeholder="name@example.com"
               />
             </div>
@@ -65,8 +75,9 @@ const Signup = () => {
               <input
                 type="text"
                 className="form-control"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                name="phone"
+                value={form.phone}
+                onChange={handleChange}
                 placeholder="10-digit number"
               />
             </div>
@@ -76,8 +87,9 @@ const Signup = () => {
               <input
                 type="text"
                 className="form-control"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
+                name="address"
+                value={form.address}
+                onChange={handleChange}
                 placeholder="Your address"
               />
             </div>
@@ -87,8 +99,9 @@ const Signup = () => {
               <input
                 type="password"
                 className="form-control"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                name="password"
+                value={form.password}
+                onChange={handleChange}
                 placeholder="At least 8 characters"
               />
             </div>
@@ -103,4 +116,4 @@ const Signup = () => {
   );
 };
 
-export default Signup;
+export default Signup_customer;
