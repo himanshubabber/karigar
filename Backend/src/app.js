@@ -9,28 +9,11 @@ const app = express()
 
 
 // Temporary: allow both localhost and frontend
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://karigar-frontend.vercel.app"
-];
+app.use(cors({
+  origin: process.env.CORS_ORIGIN,
+  credentials: true
+}))
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, origin);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
-  })
-);
-
-app.use(cors(corsOptions));
-app.options("*", cors());
 
 app.use(express.json({limit: "16kb"}))
 app.use(express.urlencoded({extended: true, limit: "16kb"}))
