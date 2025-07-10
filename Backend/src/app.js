@@ -34,6 +34,10 @@ app.use("/api/v1/worker", workerRouter)
 app.use("/api/v1/payment", paymentRouter)
 app.use("/api/v1/serviceRequest", serviceRequestRouter);
 
+app.get("/", (req, res) => {
+    res.send("API is running");
+  });
+  
 
 // http://localhost:8000/api/v1/users/register
 
