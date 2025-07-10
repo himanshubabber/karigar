@@ -29,6 +29,7 @@ app.use(
   })
 );
 
+app.use(cors(corsOptions));
 app.options("*", cors());
 
 app.use(express.json({limit: "16kb"}))
