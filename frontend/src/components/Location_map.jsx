@@ -25,10 +25,9 @@ import { TiPin } from "react-icons/ti";
 import { MdOutlineDirectionsRun } from "react-icons/md";
 import { FiMapPin } from "react-icons/fi";
 import { Navigate, useNavigate } from "react-router-dom";
+import { useServiceReq } from "../Context/Service_req_context.jsx"
 
 
-
-const destination = [28.682356, 77.064675];
 
 const sourceIcon = L.icon({
   iconUrl: "https://cdn-icons-png.flaticon.com/512/2202/2202112.png",
@@ -44,14 +43,14 @@ const manIcon = L.icon({
   popupAnchor: [0, -30],
 });
 
-function Routing({ from }) {
+function Routing({ from, to }) {
   const map = useMap();
 
   useEffect(() => {
-    if (!from) return;
+    if (!from || !to) return;
 
     const control = L.Routing.control({
-      waypoints: [L.latLng(from), L.latLng(destination)],
+      waypoints: [L.latLng(from), L.latLng(to)],
       lineOptions: { styles: [{ color: "blue", weight: 5 }] },
       show: false,
       addWaypoints: false,
@@ -63,7 +62,7 @@ function Routing({ from }) {
     return () => {
       map.removeControl(control);
     };
-  }, [from, map]);
+  }, [from, to, map]);
 
   return null;
 }
@@ -102,26 +101,19 @@ function getBearingAndDistance(from, to) {
 }
 
 const Location_map = () => {
+  const { selectedReq: order } = useServiceReq(); // ✅ get request from context
+  const destination = order?.customerLocation?.coordinates
+    ? [order.customerLocation.coordinates[1], order.customerLocation.coordinates[0]]
+    : null;
+
   const [userPosition, setUserPosition] = useState(null);
   const [track, setTrack] = useState(false);
   const [address, setAddress] = useState("");
   const [showCancelOptions, setShowCancelOptions] = useState(false);
   const [otp, setOtp] = useState("");
 
-  const order = {
-    _id: "1",
-    category: "plumber",
-    orderStatus: "searching",
-    jobStatus: "pending",
-    description: "Kitchen tap leaking",
-    paymentStatus: "pending",
-    createdAt: Date.now(),
-    customer: { fullName: "Aman Verma" },
-    audioNoteUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-    customerLocation: { coordinates: [77.1025, 28.7041] },
-  };
-  
-  const navigate= useNavigate();
+  const navigate = useNavigate();
+
   useEffect(() => {
     let watchId;
     if (track) {
@@ -147,9 +139,11 @@ const Location_map = () => {
 
   const startTracking = () => setTrack(true);
   const mapCenter = userPosition || [28.6139, 77.209];
-  const distanceInfo = userPosition
+  const distanceInfo = userPosition && destination
     ? getBearingAndDistance(userPosition, destination)
     : null;
+
+  if (!order || !destination) return <p className="text-center mt-5">No service request selected.</p>;
 
   return (
     <div
@@ -177,33 +171,20 @@ const Location_map = () => {
             width: "100%",
           }}
         >
-           Locate Customer
+          Locate Customer
         </button>
 
-        <div
-          className="card"
-          style={{
-            padding: "20px",
-            borderRadius: "12px",
-            background: "#f8f9fa",
-            boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
-          }}
-        >
+        <div className="card" style={{ padding: "20px", borderRadius: "12px", background: "#f8f9fa", boxShadow: "0 4px 10px rgba(0,0,0,0.08)" }}>
           <h5 className="fw-bold mb-3" style={{ fontSize: "1.2rem" }}>
-          <GiMultiDirections size={26} className="me-2 text-black"/>
+            <GiMultiDirections size={26} className="me-2 text-black" />
             Navigation Info
           </h5>
+
           {userPosition ? (
             <>
-              <p><strong> 
-              <TiPin size={26} className="me-2 text-black"/>
-                Your Location:</strong> <span className="text-primary">{address}</span></p>
-              <p><strong>
-              <MdOutlineDirectionsRun size={26} className="me-2 text-black" />
-                 Distance to Customer:</strong> <span className="badge bg-info text-dark">{distanceInfo.distance} m</span></p>
-              <p><strong>
-              <MdOutlineAccessTimeFilled size={26} className="me-2 text-black" />
-                 Estimated Time:</strong> <span className="badge bg-success text-white">{distanceInfo.time} mins</span></p>
+              <p><strong><TiPin size={26} className="me-2 text-black" />Your Location:</strong> <span className="text-primary">{address}</span></p>
+              <p><strong><MdOutlineDirectionsRun size={26} className="me-2 text-black" />Distance to Customer:</strong> <span className="badge bg-info text-dark">{distanceInfo.distance} m</span></p>
+              <p><strong><MdOutlineAccessTimeFilled size={26} className="me-2 text-black" />Estimated Time:</strong> <span className="badge bg-success text-white">{distanceInfo.time} mins</span></p>
 
               <a
                 href={`https://www.google.com/maps/dir/?api=1&origin=${userPosition[0]},${userPosition[1]}&destination=${destination[0]},${destination[1]}`}
@@ -220,8 +201,8 @@ const Location_map = () => {
                   textAlign: "center",
                 }}
               >
-                <FiMapPin  size={26} className="me-2 text-black" />
-                 Open in Google Maps
+                <FiMapPin size={26} className="me-2 text-black" />
+                Open in Google Maps
               </a>
 
               <hr style={{ margin: "15px 0" }} />
@@ -244,30 +225,19 @@ const Location_map = () => {
               </button>
 
               {!showCancelOptions ? (
-  <button
-    className="btn btn-danger"
-    style={{ width: "100%" }}
-    onClick={() => setShowCancelOptions(true)}
-  >
-    Cancel
-  </button>
-) : (
-  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-    <button
-      className="btn btn-warning"
-      onClick={() => navigate("/worker")}
-    >
-      Don't want to proceed
-    </button>
-    <button
-      className="btn btn-secondary"
-      onClick={() => navigate("/worker")}
-    >
-      Customer not responding
-    </button>
-  </div>
-)}
-
+                <button className="btn btn-danger" style={{ width: "100%" }} onClick={() => setShowCancelOptions(true)}>
+                  Cancel
+                </button>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  <button className="btn btn-warning" onClick={() => navigate("/worker")}>
+                    Don't want to proceed
+                  </button>
+                  <button className="btn btn-secondary" onClick={() => navigate("/worker")}>
+                    Customer not responding
+                  </button>
+                </div>
+              )}
             </>
           ) : (
             <p className="text-muted">Waiting for your location...</p>
@@ -275,88 +245,38 @@ const Location_map = () => {
         </div>
       </div>
 
-      
-
-      {/* Center Map */}
-      <div
-        style={{
-          flexGrow: 1,
-          height: "520px",
-          minWidth: "600px",
-          borderRadius: "12px",
-          boxShadow: "0 3px 10px rgba(0,0,0,0.1)",
-          overflow: "hidden",
-        }}
-      >
-        <MapContainer
-          center={mapCenter}
-          zoom={13}
-          style={{ height: "100%", width: "100%" }}
-        >
+      {/* Map */}
+      <div style={{ flexGrow: 1, height: "520px", minWidth: "600px", borderRadius: "12px", boxShadow: "0 3px 10px rgba(0,0,0,0.1)", overflow: "hidden" }}>
+        <MapContainer center={mapCenter} zoom={13} style={{ height: "100%", width: "100%" }}>
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-          {userPosition && (
+          {userPosition && destination && (
             <>
               <Marker position={destination} icon={manIcon}>
-                <Popup>📍 Customer Location (Nangloi Metro)</Popup>
+                <Popup>📍 Customer Location</Popup>
               </Marker>
               <Marker position={userPosition} icon={sourceIcon}>
                 <Popup>👷‍♂️ Your Current Location</Popup>
               </Marker>
-              <Routing from={userPosition} />
+              <Routing from={userPosition} to={destination} />
             </>
           )}
         </MapContainer>
       </div>
 
-      {/* Right Panel: Customer Request Info */}
-      <div
-        className="card"
-        style={{
-          minWidth: "260px",
-          maxWidth: "320px",
-          padding: "20px",
-          borderRadius: "12px",
-          background: "#fefefe",
-          boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-          height: "fit-content",
-        }}
-      >
-        <h5
-          className="fw-bold mb-3"
-          style={{
-            fontSize: "1.2rem",
-            color: "#343a40",
-            borderBottom: "1px solid #ccc",
-            paddingBottom: "10px",
-            marginBottom: "20px",
-          }}
-        >
+      {/* Right Info Card */}
+      <div className="card" style={{ minWidth: "260px", maxWidth: "320px", padding: "20px", borderRadius: "12px", background: "#fefefe", boxShadow: "0 4px 10px rgba(0,0,0,0.1)", height: "fit-content" }}>
+        <h5 className="fw-bold mb-3" style={{ fontSize: "1.2rem", color: "#343a40", borderBottom: "1px solid #ccc", paddingBottom: "10px", marginBottom: "20px" }}>
           <IoIosInformationCircle size={26} className="me-2 text-black" />
-           Customer Request Info
+          Customer Request Info
         </h5>
         <div style={{ lineHeight: "1.8", fontSize: "15px", color: "#212529" }}>
-          <p><strong>
-          <CgProfile  size={26} className="me-2 text-black"/>
-            
-             Name:</strong> {order.customer.fullName}</p>
-          <p><strong>
-          <FaHammer size={26} className="me-2 text-black"/>
-             Category:</strong> {order.category}</p>
-          <p><strong>
-          <MdOutlineDescription size={26} className="me-2 text-black"/> 
-            Description:</strong> {order.description}</p>
-          <p><strong>
-          <MdNetworkWifi size={26} className="me-2 text-black" />
-            Job Status:</strong> <span style={{ color: "#ffc107" }}>{order.jobStatus}</span></p>
-          <p><strong>
-          <RiMoneyDollarCircleFill size={26} className="me-2 text-black"/>
-             Payment:</strong> <span style={{ color: "#dc3545" }}>{order.paymentStatus}</span></p>
-          <p><strong>
-          <MdOutlineAccessTimeFilled size={26} className="me-2 text-black" />
-             Created:</strong> {new Date(order.createdAt).toLocaleString()}</p>
-          <p><strong>
-          <AiTwotoneAudio size={26} className="me-2 text-black"/>
-             Audio Note:</strong></p>
+          <p><strong><CgProfile size={26} className="me-2 text-black" />Name:</strong> {order.customer.fullName}</p>
+          <p><strong><FaHammer size={26} className="me-2 text-black" />Category:</strong> {order.category}</p>
+          <p><strong><MdOutlineDescription size={26} className="me-2 text-black" />Description:</strong> {order.description}</p>
+          <p><strong><MdNetworkWifi size={26} className="me-2 text-black" />Job Status:</strong> <span style={{ color: "#ffc107" }}>{order.jobStatus}</span></p>
+          <p><strong><RiMoneyDollarCircleFill size={26} className="me-2 text-black" />Payment:</strong> <span style={{ color: "#dc3545" }}>{order.paymentStatus}</span></p>
+          <p><strong><MdOutlineAccessTimeFilled size={26} className="me-2 text-black" />Created:</strong> {new Date(order.createdAt).toLocaleString()}</p>
+          <p><strong><AiTwotoneAudio size={26} className="me-2 text-black" />Audio Note:</strong></p>
           <audio controls src={order.audioNoteUrl} style={{ width: "100%", marginTop: "6px" }} />
         </div>
       </div>

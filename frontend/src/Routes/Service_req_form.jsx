@@ -6,6 +6,12 @@ const categories = [
   "tv", "fridge", "ac", "washing machine", "laptop"
 ];
 
+const toTitleCase = (str) =>
+  str
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+
 const Service_req_form = () => {
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
@@ -42,25 +48,25 @@ const Service_req_form = () => {
       return;
     }
 
-    const formData = new FormData();
-    formData.append("description", description);
-    formData.append("customerLocation", JSON.stringify(location));
-    if (audioNoteUrl) {
-      formData.append("audioNote", audioNoteUrl);
-    }
-
     try {
-      const res = await axios.post(
-        `/api/v1/service-request/${category}/create`,
-        formData,
+      const response = await axios.post(
+        "/api/v1/serviceRequest/create",
         {
-          headers: { "Content-Type": "multipart/form-data" },
+          category: category.charAt(0).toUpperCase() + category.slice(1).toLowerCase(),
+          description,
+          customerLocation: location,
+          audioNoteUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+        },
+        {
+          headers: {
+            "Content-Type": "application/json"
+          },
           withCredentials: true
         }
       );
 
       alert("Service request submitted!");
-      console.log(res.data);
+      console.log(response.data);
     } catch (err) {
       console.error(err);
       alert("Failed to submit: " + (err.response?.data?.message || err.message));
@@ -96,7 +102,9 @@ const Service_req_form = () => {
             >
               <option value="">-- Choose a service --</option>
               {categories.map((cat) => (
-                <option key={cat} value={cat}>{cat}</option>
+                <option key={cat} value={cat}>
+                  {toTitleCase(cat)}
+                </option>
               ))}
             </select>
           </div>

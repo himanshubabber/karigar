@@ -13,7 +13,7 @@ import geolib from "geolib";
 const createServiceRequest = asyncHandler(async (req, res) => {
   const customerId = req.customer?._id;
   const { category, description, customerLocation, audioNoteUrl = "" } = req.body;
-
+   console.log(category);
   if (!category) {
     throw new ApiError(400, "Service category is required");
   }
