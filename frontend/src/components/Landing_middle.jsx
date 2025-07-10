@@ -42,7 +42,7 @@ const Landing_middle = () => {
               transition: "all 0.3s",
               borderRadius: "8px",
             }}
-            onClick={() => navigate("/signup_worker")}
+            onClick={() => navigate("/signin")}
           >
             Join as Worker
           </button>
@@ -52,7 +52,7 @@ const Landing_middle = () => {
               transition: "all 0.3s",
               borderRadius: "8px",
             }}
-            onClick={() => navigate("/signup_customer")}
+            onClick={() => navigate("/signin_customer")}
           >
             Join as Customer
           </button>

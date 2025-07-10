@@ -61,6 +61,15 @@ const Signin_customer = () => {
                 />
               </div>
             ))}
+             <p className="mt-3 text-center">
+               Don't have an account?{" "}
+            <span
+             style={{ color: "#007bff", cursor: "pointer", textDecoration: "underline" }}
+             onClick={() => navigate("/signup_customer")}
+             >
+             Sign up here
+            </span>
+          </p>
             <button type="submit" className="btn btn-primary w-100">
               Sign In
             </button>
