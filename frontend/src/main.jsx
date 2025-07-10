@@ -17,6 +17,8 @@ import Location_userside from './Routes/Location_userside.jsx';
 import Edit_worker from './components/Edit_worker.jsx';
 import { WorkerProvider } from './Context/Worker_context.jsx';
 import Signin_customer from './pages/signin_customer.jsx';
+import { CustomerProvider } from './Context/Customer_context.jsx';
+import { ServiceReqProvider } from './Context/Service_req_context.jsx';
 
 
 const router = createBrowserRouter([
@@ -71,8 +73,12 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
+    <ServiceReqProvider>
+    <CustomerProvider>
     <WorkerProvider>
    <RouterProvider router={router}   />
    </WorkerProvider>
+   </CustomerProvider>
+   </ServiceReqProvider>
   </StrictMode>,
 )

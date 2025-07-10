@@ -1,11 +1,11 @@
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { useWorker } from "../Context/Worker_context";
+import { useCustomer } from "../Context/Customer_context";
 
 const Signin_customer = () => {
   const navigate = useNavigate();
-  const { setWorker } = useWorker();
+  const { loginCustomer } = useCustomer();
 
   const [form, setForm] = useState({
     email: "",
@@ -21,21 +21,20 @@ const Signin_customer = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!form.email || !form.password) {
       alert("Both fields are required.");
       return;
     }
 
     try {
-      const res = await axios.post("/api/v1/worker/login", form, {
+      const res = await axios.post("/api/v1/customer/login", form, {
         withCredentials: true,
       });
 
-      const worker = res.data?.data?.worker;
-      setWorker(worker);
+      const customer = res.data?.data?.customer;
+      loginCustomer(customer);
       alert("Login successful!");
-      navigate("/worker", { state: worker });
+      navigate("/customer", { state: customer });
     } catch (err) {
       console.error(err);
       alert("Login failed: " + (err.response?.data?.message || err.message));
@@ -48,26 +47,20 @@ const Signin_customer = () => {
         <div className="card-body">
           <h3 className="text-center mb-4">Customer Login</h3>
           <form onSubmit={handleSubmit}>
-            <div className="mb-3">
-              <label className="form-label">Email</label>
-              <input
-                type="email"
-                name="email"
-                className="form-control"
-                value={form.email}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="mb-3">
-              <label className="form-label">Password</label>
-              <input
-                type="password"
-                name="password"
-                className="form-control"
-                value={form.password}
-                onChange={handleChange}
-              />
-            </div>
+            {["email", "password"].map((field, idx) => (
+              <div className="mb-3" key={idx}>
+                <label className="form-label">
+                  {field.charAt(0).toUpperCase() + field.slice(1)}
+                </label>
+                <input
+                  type={field === "password" ? "password" : "email"}
+                  name={field}
+                  className="form-control"
+                  value={form[field]}
+                  onChange={handleChange}
+                />
+              </div>
+            ))}
             <button type="submit" className="btn btn-primary w-100">
               Sign In
             </button>

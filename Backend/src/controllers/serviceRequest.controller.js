@@ -9,14 +9,13 @@ import { Cancellation } from "../models/cancellation.model.js";
 import { Customer } from "../models/customer.model.js";
 import geolib from "geolib";
 
+
 const createServiceRequest = asyncHandler(async (req, res) => {
   const customerId = req.customer?._id;
-  const { category } = req.params;
-  const { description, customerLocation } = req.body;
-  const audioNoteLocalPath = req.file?.path;
-  let audioNote;
-  if (audioNoteLocalPath) {
-    audioNote = await uploadOnCloudinary(audioNoteLocalPath);
+  const { category, description, customerLocation, audioNoteUrl = "" } = req.body;
+
+  if (!category) {
+    throw new ApiError(400, "Service category is required");
   }
 
   if (
@@ -27,32 +26,35 @@ const createServiceRequest = asyncHandler(async (req, res) => {
   ) {
     throw new ApiError(400, "Valid customerLocation is required");
   }
+
   const serviceRequest = await ServiceRequest.create({
     customerId,
     category,
     description,
-    customerLocation,
-    audioNoteUrl: audioNote?.url || "",
+    customerLocation: {
+      type: "Point",
+      coordinates: customerLocation.coordinates
+    },
+    audioNoteUrl
   });
 
-  const createdServiceRequest = await ServiceRequest.findById(
-    serviceRequest._id
-  ).select("_id customerId category description customerLocation audioNoteUrl");
+  const createdServiceRequest = await ServiceRequest.findById(serviceRequest._id).select(
+    "_id customerId category description customerLocation audioNoteUrl"
+  );
 
   if (!createdServiceRequest) {
     throw new ApiError(500, "Service request creation failed");
   }
 
-  return res
-    .status(201)
-    .json(
-      new ApiResponse(
-        201,
-        createdServiceRequest,
-        "Service request created successfully"
-      )
-    );
+  return res.status(201).json(
+    new ApiResponse(
+      201,
+      createdServiceRequest,
+      "Service request created successfully"
+    )
+  );
 });
+
 
 const findRequests = asyncHandler(async (req, res) => {
   const workerId = req.worker?._id;

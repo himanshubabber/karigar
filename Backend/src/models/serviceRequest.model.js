@@ -1,118 +1,171 @@
 import mongoose from "mongoose";
+import { visitingCharge } from "../constants.js";
 
-const serviceRequestSchema  = new mongoose.Schema({
-    customerId:{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Customer",
-        required: true
+const serviceRequestSchema = new mongoose.Schema(
+  {
+    customerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Customer",
+      required: true,
     },
-    workerId:{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Worker",
-        default: null
+    workerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Worker",
+      default: null,
     },
     category: {
-        type: String,
-        enum: ["plumber", "electrician", "carpenter", "painter", "tv", "fridge", "ac", "washing machine", "laptop"],
-        required: true
+      type: String,
+      enum: [
+        "Plumber",
+        "Electrician",
+        "TV",
+        "Fridge",
+        "AC",
+        "Washing-Machine",
+        "Laptop",
+      ],
+      required: true,
     },
     description: {
-        type: String,
-        default: ""
+      type: String,
+      default: "",
     },
     audioNoteUrl: {
-        type: String,
-        default: ""
+      type: String,
+      default: "",
     },
     orderStatus: {
-        type: String,
-        enum: ["searching","connected", "onway", "arrived","verified","repairAmountQuoted", "cancelled","accepted", "rejected"],
-        default: "searching",
+      type: String,
+      enum: [
+        "searching",
+        "connected",
+        "onway",
+        "arrived",
+        "verified",
+        "repairAmountQuoted",
+        "cancelled",
+        "accepted",
+        "rejected",
+      ],
+      default: "searching",
     },
-    jobStatus:{
-        type: String,
-        enum: ["pending", "completed"],
-        default: "pending"
+    jobStatus: {
+      type: String,
+      enum: ["pending", "completed"],
+      default: "pending",
     },
     customerLocation: {
-        type: {
-            type: String,
-            default: "Point"
+      type: {
+        type: String,
+        enum: ["Point"],
+        required: true,
+      },
+      coordinates: {
+        type: [Number], // [longitude, latitude]
+        required: true,
+        validate: {
+          validator: function (v) {
+            return (
+              Array.isArray(v) &&
+              v.length === 2 &&
+              typeof v[0] === "number" &&
+              typeof v[1] === "number"
+            );
+          },
+          message: "customerLocation.coordinates must be [longitude, latitude]",
         },
-        coordinates: {
-            type: [Number], // [longitude, latitude]
-            required: true
-        }
+      },
     },
     workerLocation: {
-        type: {
-            type: String,
-            default: "Point"
+      type: {
+        type: String,
+        enum: ["Point"],
+      },
+      coordinates: {
+        type: [Number], // [longitude, latitude]
+        validate: {
+          validator: function (v) {
+            return (
+              !v ||
+              (Array.isArray(v) &&
+                v.length === 2 &&
+                typeof v[0] === "number" &&
+                typeof v[1] === "number")
+            );
+          },
+          message: "workerLocation.coordinates must be [longitude, latitude]",
         },
-        coordinates: {
-            type: [Number],
-            default: null
-        }
+      },
     },
     searchExpiresAt: {
-        type: Date,
-        default: () => new Date(Date.now() + 15*60000) // 15 mins
+      type: Date,
+      default: () => new Date(Date.now() + 10 * 60000), // 10 mins
     },
-    quoteAmount: { 
-        type: Number, 
-        default: null 
+    visitingCharge: {
+      type: Number,
+      default: visitingCharge,
     },
-    acceptedAt: {
-        type: Date,
-        default: null
+    quoteAmount: {
+      type: Number,
+      default: null,
     },
-    arrivedAt: {
-        type: Date,
-        default: null
-    },
-    verifiedAt: {
-    type: Date,
-    default: null
-    },
-    cancelledAt: {
-        type: Date,
-        default: null
-    },
+    acceptedAt: Date,
+    arrivedAt: Date,
+    connectedAt: Date,
+    verifiedAt: Date,
+    cancelledAt: Date,
     cancelledBy: {
-        type: String,
-        enum: ["customer", "technician", "system"],
-        default: null
+      type: String,
+      enum: ["customer", "technician", "system"],
+      default: null,
     },
     cancellationReason: {
-        type: String,
-        default: "",
-        enum: ["customerNotResponding", "workerNotResponding", "notAbleToServeIssue","byMistake","notConnected", "other"]
+      type: String,
+      enum: [
+        "customerNotResponding",
+        "workerNotRespondingOrLate",
+        "workerNotAbleToServe",
+        "byMistake",
+        "notConnected",
+        "unattendedRequests",
+        "NA",
+      ],
+      default: "NA",
     },
-    completedAt: {
-        type: Date,
-        default: null
-    },
-    rejectedAt: {
-        type: Date,
-        default: null
-    },
+    completedAt: Date,
+    rejectedAt: Date,
     paymentStatus: {
-        type: String,
-        enum: ["pending", "paid", "failed"],
-        default: "pending"
+      type: String,
+      enum: ["pending", "paid", "failed"],
+      default: "pending",
     },
     paymentType: {
-        type: String,
-        enum: ["online", "cash", null],
-        default: null
+      type: String,
+      enum: ["online", "cash", null],
+      default: null,
     },
-    paidAt: {
-        type: Date,
-        default: null
-    }
-},{timestamps: true});
+    paidAt: Date,
+    workerRated: {
+      type: Boolean,
+      default: false,
+    },
+    ratedWith: {
+      type: Number,
+      default: null,
+    },
+    workerReported: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  { timestamps: true }
+);
 
+// 2dsphere Indexes for Geo queries
 serviceRequestSchema.index({ customerLocation: "2dsphere" });
 serviceRequestSchema.index({ workerLocation: "2dsphere" });
 
-export const ServiceRequest = mongoose.model("ServiceRequest", serviceRequestSchema );
+export const ServiceRequest = mongoose.model(
+  "ServiceRequest",
+  serviceRequestSchema
+);

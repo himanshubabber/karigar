@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-
+import axios from "axios";
 
 const categories = [
   "plumber", "electrician", "carpenter", "painter",
@@ -35,22 +35,36 @@ const Service_req_form = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!category || !location) {
       alert("Please fill in all required fields.");
       return;
     }
 
-    const requestData = {
-      category,
-      description,
-      audioNoteUrl: audioNoteUrl?.name || "",
-      customerLocation: location
-    };
+    const formData = new FormData();
+    formData.append("description", description);
+    formData.append("customerLocation", JSON.stringify(location));
+    if (audioNoteUrl) {
+      formData.append("audioNote", audioNoteUrl);
+    }
 
-    console.log("Submitted:", requestData);
-    alert("Request submitted! Check console.");
+    try {
+      const res = await axios.post(
+        `/api/v1/service-request/${category}/create`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+          withCredentials: true
+        }
+      );
+
+      alert("Service request submitted!");
+      console.log(res.data);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to submit: " + (err.response?.data?.message || err.message));
+    }
   };
 
   return (

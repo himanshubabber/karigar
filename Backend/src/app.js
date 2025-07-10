@@ -1,6 +1,9 @@
 import express from "express"
 import cors from "cors"
 import cookieParser from "cookie-parser"
+import dotenv from "dotenv";
+dotenv.config();
+
 
 const app = express()
 
@@ -23,11 +26,13 @@ import paymentRouter from "./routes/payment.route.js"
 
 
 
+
+
 //routes declaration
 app.use("/api/v1/customer", customerRouter)
 app.use("/api/v1/worker", workerRouter)
-app.use("/api/v1/service-request", serviceRequestRouter)
 app.use("/api/v1/payment", paymentRouter)
+app.use("/api/v1/serviceRequest", serviceRequestRouter);
 
 
 // http://localhost:8000/api/v1/users/register
