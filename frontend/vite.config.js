@@ -7,9 +7,9 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: "https://karigarbackend.vercel.app",
+        target: "http://localhost:8000",
         changeOrigin: true,
-        secure: false,
+        secure:false,
       },
     },
   },

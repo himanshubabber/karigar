@@ -3,6 +3,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { Customer } from "../models/customer.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { Otp } from "../models/otp.model.js";
 import jwt from "jsonwebtoken";
 
 const generateAccessAndRefreshTokens = async(customerId)=>{
@@ -335,6 +336,45 @@ const updateFullName = asyncHandler(async(req, res) => {
     .json(new ApiResponse(200, customer, "Full name updated successfully"))
 });
 
+export const generateotp=()=>{
+    return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+
+
+const generateOtpobj = asyncHandler(async (req, res) => {
+  const { serviceRequestId } = req.body;
+
+  if (!serviceRequestId) {
+    return res.status(400).json({ message: "serviceId is required" });
+  }
+
+  const otp = generateotp();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
+
+  // Either update existing or create new OTP
+  const updatedOtp = await Otp.findOneAndUpdate(
+    { serviceRequestId },
+    {
+      otp,
+      expiresAt,
+      verified: false,
+    },
+    {
+      new: true,
+      upsert: true,
+      setDefaultsOnInsert: true,
+    }
+  );
+
+  console.log("OTP sent to customer:", otp);
+
+  return res.status(200).json({
+    message: "OTP generated successfully",
+    otp,
+  });
+});
+
 
 
 export {
@@ -348,5 +388,7 @@ export {
     updateEmail,
     updatePhone,
     updateAddress,
-    updateFullName
+    updateFullName,
+    generateOtpobj,
 }
+

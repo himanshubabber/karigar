@@ -49,13 +49,14 @@ const Service_req_form = () => {
     }
 
     try {
-      const response = await axios.post(
+      // Step 1: Create Service Request
+      const res = await axios.post(
         "/api/v1/serviceRequest/create",
         {
           category: category.charAt(0).toUpperCase() + category.slice(1).toLowerCase(),
           description,
           customerLocation: location,
-          audioNoteUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+          audioNoteUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" // placeholder
         },
         {
           headers: {
@@ -65,11 +66,22 @@ const Service_req_form = () => {
         }
       );
 
-      alert("Service request submitted!");
-      console.log(response.data);
+      console.log(res.data);
+      const serviceRequestId = res.data?.data?._id;
+      console.log(serviceRequestId)
+    if (!serviceRequestId) throw new Error("No service ID returned");
+
+      // Step 2: Generate OTP
+      const otpRes=await axios.post(
+        "/api/v1/customer/generate-otp",
+        { serviceRequestId },
+        { withCredentials: true }
+      );
+     console.log("OTP generated:", otpRes.data);
+      alert("Service request submitted and OTP generated!");
     } catch (err) {
       console.error(err);
-      alert("Failed to submit: " + (err.response?.data?.message || err.message));
+      alert("Failed: " + (err.response?.data?.message || err.message));
     }
   };
 

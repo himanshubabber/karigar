@@ -3,7 +3,10 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { Worker } from "../models/worker.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { Otp } from "../models/otp.model.js";
 import jwt from "jsonwebtoken";
+import { ServiceRequest } from "../models/serviceRequest.model.js";
+
 
 const generateAccessAndRefreshTokens = async(workerId)=>{
     try {
@@ -345,6 +348,36 @@ const updateFullName = asyncHandler(async(req, res) => {
 });
 
 
+ const verifyOtpForService = async (req, res) => {
+    const { serviceId, otp } = req.body;
+  
+    if (!serviceId || !otp) {
+      return res.status(400).json({ message: "serviceId and otp are required" });
+    }
+  
+    const otpRecord = await Otp.findOne({ serviceId });
+    if (!otpRecord) {
+      return res.status(404).json({ message: "OTP not found" });
+    }
+  
+    if (otpRecord.expiresAt < new Date()) {
+      return res.status(400).json({ message: "OTP expired" });
+    }
+  
+    if (otpRecord.otp !== otp) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
+  
+    await ServiceRequest.findByIdAndUpdate(serviceId, {
+      orderStatus: "completed",
+      jobStatus: "completed",
+      completedAt: new Date()
+    });
+  
+    await Otp.deleteOne({ serviceId });
+  
+    res.status(200).json({ message: "OTP verified. Job marked as completed." });
+};
 
 export{
     registerWorker,
@@ -357,5 +390,6 @@ export{
     updateEmail,
     updatePhone,
     updateAddress,
-    updateFullName
+    updateFullName,
+    verifyOtpForService,
 }

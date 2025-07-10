@@ -26,6 +26,7 @@ import { MdOutlineDirectionsRun } from "react-icons/md";
 import { FiMapPin } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { useServiceReq } from "../Context/Service_req_context.jsx";
+import axios from "axios";
 
 const sourceIcon = L.icon({
   iconUrl: "https://cdn-icons-png.flaticon.com/512/2202/2202112.png",
@@ -142,6 +143,27 @@ const Location_map = () => {
 
   const customer = order.customerId || {};
 
+  const handleSubmitOtp = async () => {
+    if (!otp) return alert("Please enter OTP");
+  
+    try {
+      const res = await axios.post(
+        `/api/v1/worker/verify-otp`, // Adjust base path if needed
+        {
+          serviceRequestId: order._id,
+          otp: otp
+        },
+        { withCredentials: true }
+      );
+  
+      alert("OTP verified! Job marked as completed.");
+      navigate("/worker"); // Or wherever you want to redirect
+    } catch (err) {
+      console.error("OTP verification failed", err);
+      alert(err?.response?.data?.message || "Failed to verify OTP");
+    }
+  };
+
   return (
     <div style={{ display: "flex", padding: "20px", gap: "20px", flexWrap: "nowrap", fontFamily: "Segoe UI, sans-serif" }}>
       {/* Left Panel */}
@@ -209,7 +231,9 @@ const Location_map = () => {
                   border: "1px solid #ccc",
                 }}
               />
-              <button className="btn btn-success" style={{ width: "100%", marginBottom: "10px" }}>
+              <button className="btn btn-success" style={{ width: "100%", marginBottom: "10px" }}
+               onClick={handleSubmitOtp}
+              >
                 Submit OTP
               </button>
 

@@ -161,7 +161,6 @@ const serviceRequestSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// 2dsphere Indexes for Geo queries
 serviceRequestSchema.index({ customerLocation: "2dsphere" });
 serviceRequestSchema.index({ workerLocation: "2dsphere" });
 
