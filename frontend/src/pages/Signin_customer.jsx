@@ -3,6 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useCustomer } from "../Context/Customer_context";
 
+
 const Signin_customer = () => {
   const navigate = useNavigate();
   const { loginCustomer } = useCustomer();
@@ -27,7 +28,7 @@ const Signin_customer = () => {
     }
 
     try {
-      const res = await axios.post("/api/v1/customer/login", form, {
+      const res = await axios.post("https://karigarbackend.vercel.app/v1/customer/login", form, {
         withCredentials: true,
       });
 
@@ -36,6 +37,7 @@ const Signin_customer = () => {
       alert("Login successful!");
       navigate("/customer", { state: customer });
     } catch (err) {
+      console.log("kya hua");
       console.error(err);
       alert("Login failed: " + (err.response?.data?.message || err.message));
     }
