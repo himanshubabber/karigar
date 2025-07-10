@@ -90,7 +90,12 @@ const loginCustomer = asyncHandler(async (req, res) => {
 
     return res
         .cookie("refreshToken", refreshToken, options)
-        .cookie("accessToken", accessToken, options)
+        .cookie("accessToken", accessToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "None",
+        }
+        )
         .status(200)
         .json(
             new ApiResponse(
