@@ -24,10 +24,8 @@ import { GiMultiDirections } from "react-icons/gi";
 import { TiPin } from "react-icons/ti";
 import { MdOutlineDirectionsRun } from "react-icons/md";
 import { FiMapPin } from "react-icons/fi";
-import { Navigate, useNavigate } from "react-router-dom";
-import { useServiceReq } from "../Context/Service_req_context.jsx"
-
-
+import { useNavigate } from "react-router-dom";
+import { useServiceReq } from "../Context/Service_req_context.jsx";
 
 const sourceIcon = L.icon({
   iconUrl: "https://cdn-icons-png.flaticon.com/512/2202/2202112.png",
@@ -101,7 +99,7 @@ function getBearingAndDistance(from, to) {
 }
 
 const Location_map = () => {
-  const { selectedReq: order } = useServiceReq(); // ✅ get request from context
+  const { selectedReq: order } = useServiceReq();
   const destination = order?.customerLocation?.coordinates
     ? [order.customerLocation.coordinates[1], order.customerLocation.coordinates[0]]
     : null;
@@ -111,7 +109,6 @@ const Location_map = () => {
   const [address, setAddress] = useState("");
   const [showCancelOptions, setShowCancelOptions] = useState(false);
   const [otp, setOtp] = useState("");
-
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -121,9 +118,7 @@ const Location_map = () => {
         (pos) => {
           const coords = [pos.coords.latitude, pos.coords.longitude];
           setUserPosition(coords);
-          fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coords[0]}&lon=${coords[1]}`
-          )
+          fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coords[0]}&lon=${coords[1]}`)
             .then((res) => res.json())
             .then((data) => setAddress(data.display_name || "Address not found"))
             .catch(() => setAddress("Unable to fetch address"));
@@ -145,16 +140,10 @@ const Location_map = () => {
 
   if (!order || !destination) return <p className="text-center mt-5">No service request selected.</p>;
 
+  const customer = order.customerId || {};
+
   return (
-    <div
-      style={{
-        display: "flex",
-        padding: "20px",
-        gap: "20px",
-        flexWrap: "nowrap",
-        fontFamily: "Segoe UI, sans-serif",
-      }}
-    >
+    <div style={{ display: "flex", padding: "20px", gap: "20px", flexWrap: "nowrap", fontFamily: "Segoe UI, sans-serif" }}>
       {/* Left Panel */}
       <div style={{ minWidth: "260px", maxWidth: "360px" }}>
         <button
@@ -270,13 +259,16 @@ const Location_map = () => {
           Customer Request Info
         </h5>
         <div style={{ lineHeight: "1.8", fontSize: "15px", color: "#212529" }}>
-          <p><strong><CgProfile size={26} className="me-2 text-black" />Name:</strong> {order.customer.fullName}</p>
-          <p><strong><FaHammer size={26} className="me-2 text-black" />Category:</strong> {order.category}</p>
-          <p><strong><MdOutlineDescription size={26} className="me-2 text-black" />Description:</strong> {order.description}</p>
-          <p><strong><MdNetworkWifi size={26} className="me-2 text-black" />Job Status:</strong> <span style={{ color: "#ffc107" }}>{order.jobStatus}</span></p>
-          <p><strong><RiMoneyDollarCircleFill size={26} className="me-2 text-black" />Payment:</strong> <span style={{ color: "#dc3545" }}>{order.paymentStatus}</span></p>
-          <p><strong><MdOutlineAccessTimeFilled size={26} className="me-2 text-black" />Created:</strong> {new Date(order.createdAt).toLocaleString()}</p>
-          <p><strong><AiTwotoneAudio size={26} className="me-2 text-black" />Audio Note:</strong></p>
+          <p><strong><CgProfile size={20} /> Name:</strong> {customer.fullName || "N/A"}</p>
+          <p><strong>📧 Email:</strong> {customer.email || "N/A"}</p>
+          <p><strong>📞 Phone:</strong> {customer.phone || "N/A"}</p>
+          <p><strong>🏠 Address:</strong> {customer.address || "N/A"}</p>
+          <p><strong><FaHammer size={20} /> Category:</strong> {order.category}</p>
+          <p><strong><MdOutlineDescription size={20} /> Description:</strong> {order.description}</p>
+          <p><strong><MdNetworkWifi size={20} /> Job Status:</strong> <span style={{ color: "#ffc107" }}>{order.jobStatus}</span></p>
+          <p><strong><RiMoneyDollarCircleFill size={20} /> Payment:</strong> <span style={{ color: "#dc3545" }}>{order.paymentStatus}</span></p>
+          <p><strong><MdOutlineAccessTimeFilled size={20} /> Created:</strong> {new Date(order.createdAt).toLocaleString()}</p>
+          <p><strong><AiTwotoneAudio size={20} /> Audio Note:</strong></p>
           <audio controls src={order.audioNoteUrl} style={{ width: "100%", marginTop: "6px" }} />
         </div>
       </div>

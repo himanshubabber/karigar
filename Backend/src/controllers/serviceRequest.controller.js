@@ -55,47 +55,45 @@ const createServiceRequest = asyncHandler(async (req, res) => {
   );
 });
 
+const getAllRequestsGroupedByWorker = asyncHandler(async (req, res) => {
+  // Get all workers with just _id and fullName (or more if needed)
+  const workers = await Worker.find({}, "_id fullName email phone");
 
-const findRequests = asyncHandler(async (req, res) => {
-  const workerId = req.worker?._id;
+  // For each worker, fetch their service requests
+  const results = await Promise.all(
+    workers.map(async (worker) => {
+      const requests = await ServiceRequest.find({ workerId: worker._id })
+        .select("_id category description orderStatus quoteAmount createdAt completedAt cancellationReason")
+        .lean();
 
-  // Get the worker's current location and workingCategory
-  const worker = await Worker.findById(workerId);
-  if (!worker || !worker.currentLocation || !Array.isArray(worker.workingCategory)) {
-    throw new ApiError(404, "Worker profile incomplete or not found");
-  }
-
-  const [workerLng, workerLat] = worker.currentLocation.coordinates;
-  const workingCategories = worker.workingCategory;
-
-  // Find all open requests in range and matching category
-  const requests = await ServiceRequest.find({
-    workerId: null,
-    category: { $in: workingCategories },
-    orderStatus: "searching",
-    customerLocation: {
-      $near: {
-        $geometry: worker.currentLocation,
-        $maxDistance: SEARCH_RADIUS_METERS,
-      },
-    },
-  }).select("_id customerId category description customerLocation audioNoteUrl");
-
-  // Add distance to each request
-  const requestsWithDistance = requests.map(req => {
-    const [customerLng, customerLat] = req.customerLocation.coordinates;
-    const distance_m = geolib.getDistance(
-    { latitude: workerLat, longitude: workerLng },
-    { latitude: customerLat, longitude: customerLng }
+      return {
+        workerId: worker._id,
+        fullName: worker.fullName,
+        email: worker.email,
+        phone: worker.phone,
+        requestCount: requests.length,
+        requests
+      };
+    })
   );
-    return {
-      ...req.toObject(),
-      distance_km: Math.round((distance_m/1000) * 100) / 100, // rounded to 2 decimals
-    };
-  });
 
   return res.status(200).json(
-    new ApiResponse(200, requestsWithDistance, "Matching service requests found")
+    new ApiResponse(200, results, "All service requests grouped by worker")
+  );
+});
+
+const findRequests = asyncHandler(async (req, res) => {
+  const availableRequests = await ServiceRequest.find({
+    orderStatus: "searching",
+    workerId: null
+  })
+  .populate("customerId", "fullName email phone address")
+  .select(
+    "_id customerId workerId category description audioNoteUrl orderStatus jobStatus customerLocation visitingCharge quoteAmount cancelledBy cancellationReason paymentStatus paymentType workerRated ratedWith workerReported searchExpiresAt createdAt"
+  );
+
+  return res.status(200).json(
+    new ApiResponse(200, availableRequests, "All available service requests fetched")
   );
 });
 
@@ -713,6 +711,7 @@ const reportWorker = asyncHandler(async (req, res) => {
 
 export {
   createServiceRequest,
+  getAllRequestsGroupedByWorker,
   findRequests,
   acceptRequest,
   setQuoteAmount,

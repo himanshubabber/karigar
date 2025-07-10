@@ -1,8 +1,7 @@
 import React, { useEffect } from "react";
 import axios from "axios";
 import Request from "./Request";
-import { useServiceReq } from "../Context/Service_req_context.jsx"
-
+import { useServiceReq } from "../Context/Service_req_context.jsx";
 
 const Requests = () => {
   const { serviceReqs, updateAllRequests } = useServiceReq();
@@ -10,7 +9,7 @@ const Requests = () => {
   useEffect(() => {
     const fetchRequests = async () => {
       try {
-        const res = await axios.get("/api/v1/service-request/all", {
+        const res = await axios.get("/api/v1/serviceRequest/find-requests", {
           withCredentials: true,
         });
         updateAllRequests(res.data.data);
@@ -25,9 +24,11 @@ const Requests = () => {
   return (
     <div className="container mt-4">
       <h3 className="mb-4">Service Requests</h3>
-      {serviceReqs.map((req) => (
-        <Request key={req._id} request={req} />
-      ))}
+      {serviceReqs.length === 0 ? (
+        <p>No requests available</p>
+      ) : (
+        serviceReqs.map((req) => <Request key={req._id} request={req} />)
+      )}
     </div>
   );
 };
