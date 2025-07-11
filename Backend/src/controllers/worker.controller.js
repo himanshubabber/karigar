@@ -349,13 +349,14 @@ const updateFullName = asyncHandler(async(req, res) => {
 
 
  const verifyOtpForService = async (req, res) => {
-    const { serviceId, otp } = req.body;
+    const { serviceRequestId, otp } = req.body;
   
-    if (!serviceId || !otp) {
+    if (!serviceRequestId || !otp) {
       return res.status(400).json({ message: "serviceId and otp are required" });
     }
   
-    const otpRecord = await Otp.findOne({ serviceId });
+    const otpRecord = await Otp.findOne({ serviceRequestId });
+    console.log(otpRecord.otp)
     if (!otpRecord) {
       return res.status(404).json({ message: "OTP not found" });
     }
@@ -363,18 +364,18 @@ const updateFullName = asyncHandler(async(req, res) => {
     if (otpRecord.expiresAt < new Date()) {
       return res.status(400).json({ message: "OTP expired" });
     }
-  
+   
     if (otpRecord.otp !== otp) {
       return res.status(400).json({ message: "Invalid OTP" });
     }
   
-    await ServiceRequest.findByIdAndUpdate(serviceId, {
+    await ServiceRequest.findByIdAndUpdate(serviceRequestId, {
       orderStatus: "completed",
       jobStatus: "completed",
       completedAt: new Date()
     });
   
-    await Otp.deleteOne({ serviceId });
+    await Otp.deleteOne({ serviceRequestId });
   
     res.status(200).json({ message: "OTP verified. Job marked as completed." });
 };
