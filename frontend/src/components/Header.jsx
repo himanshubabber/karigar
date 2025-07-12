@@ -12,15 +12,14 @@ const Header = () => {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
+        console.log(latitude);
         try {
           const res = await fetch(
             `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
           );
           const data = await res.json();
-          const city =
-            data.address.city ||
-            data.address.town ||
-            data.address.village ||
+          console.log(data);
+          const city =data.display_name||
             'Unknown';
           setLocation(city);
         } catch {
@@ -111,30 +110,7 @@ const Header = () => {
               placeholder="Search..."
             />
           </form>
-
-          {/* Profile Dropdown */}
-          <div className="dropdown">
-            <a
-              href="#"
-              className="d-block link-dark text-decoration-none dropdown-toggle"
-              data-bs-toggle="dropdown"
-            >
-              <img
-                src="https://github.com/mdo.png"
-                alt="User"
-                width="36"
-                height="36"
-                className="rounded-circle shadow-sm"
-              />
-            </a>
-            <ul className="dropdown-menu dropdown-menu-end text-small mt-2">
-              <li><a className="dropdown-item" href="#">New project...</a></li>
-              <li><a className="dropdown-item" href="#">Settings</a></li>
-              <li><a className="dropdown-item" href="#">Profile</a></li>
-              <li><hr className="dropdown-divider" /></li>
-              <li><a className="dropdown-item" href="#">Sign out</a></li>
-            </ul>
-          </div>
+          
         </div>
       </div>
     </header>

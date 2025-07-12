@@ -70,7 +70,7 @@ const workerSchema = new mongoose.Schema(
       coordinates: { type: [Number], required: true }
     },
     profilePhoto: {
-      type: String, // URL to image
+      type: String, 
       default: "",
     },
     isVerified: {

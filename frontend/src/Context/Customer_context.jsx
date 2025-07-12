@@ -4,9 +4,11 @@ const CustomerContext = createContext();
 
 export const CustomerProvider = ({ children }) => {
   const [customer, setCustomer] = useState(null); 
+  const [token, setToken] = useState(null)
 
-  const loginCustomer = (customerData) => {
+  const loginCustomer = (customerData,accessToken) => {
     setCustomer(customerData);
+    setToken(accessToken);
   };
 
   const logoutCustomer = () => {
@@ -20,6 +22,8 @@ export const CustomerProvider = ({ children }) => {
         setCustomer,
         loginCustomer,
         logoutCustomer,
+        token,
+        setToken,
         isAuthenticated: !!customer,
       }}
     >

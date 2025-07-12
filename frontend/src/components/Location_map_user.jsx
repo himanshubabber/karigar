@@ -23,13 +23,14 @@ import {
 } from "react-icons/md";
 import { RiMoneyDollarCircleFill } from "react-icons/ri";
 import { AiTwotoneAudio } from "react-icons/ai";
-
+import { useNavigate } from "react-router-dom";
 const destination = [28.682356, 77.064675];
 
 import { useServiceReq } from "../Context/Service_req_context.jsx";
 import { useCustomer } from "../Context/Customer_context.jsx";
 import { useWorker } from "../Context/Worker_context.jsx";
 import { useOtp } from "../Context/Otp_context.jsx";
+import axios from "axios"
 
 const sourceIcon = L.icon({
   iconUrl: "https://cdn-icons-png.flaticon.com/512/2202/2202112.png",
@@ -64,20 +65,48 @@ function Routing({ from }) {
 }
 
 const Location_map_user = () => {
-  const { customer: customerData } = useCustomer();
-  const { worker: workerData } = useWorker();
+  const { customer, setCustomer } = useCustomer();
+  const { worker, setWorker } = useWorker();
   const { otpData: otp } = useOtp();
-  const { selectedReq: ser } = useServiceReq();
+  const {serviceReqs: ser } = useServiceReq();
+
+  const [otpShow,setOtpShow]=useState(false);
+
+  const HandleOnPay=()=>{
+    setOtpShow(true)
+  }
+
   const serviceRequestId=ser?._id;
   console.log(serviceRequestId)
+  useEffect(() => {
+    if (serviceRequestId) {
+      axios
+        .post("/api/v1/serviceRequest/get-service-details", { serviceRequestId })
+        .then((response) => {
+          const resData = response.data?.data;
+  
+          const {
+            customer: fetchedCustomer,
+            worker: fetchedWorker,
+            serviceRequest: fetchedServiceReq,
+          } = resData || {};
+  
+          setCustomer(fetchedCustomer || null);
+          setWorker(fetchedWorker || null);
+          setServiceReq(fetchedServiceReq || null);
+        })
+        .catch((err) => {
+          console.error("Error fetching service details:", err);
+        });
+    }
+  }, [serviceRequestId]);
+
+ 
 
   const [userPosition, setUserPosition] = useState(null);
   const [showCancelOptions, setShowCancelOptions] = useState(false);
   const [track, setTrack] = useState(false);
 
-  const customer = customerData || {};
-  const worker = workerData || {};
-  const serviceReq = ser || {};
 
   // 🟢 Start location tracking immediately on mount
   useEffect(() => {
@@ -100,6 +129,11 @@ const Location_map_user = () => {
   }, [track]);
 
   const mapCenter = userPosition || [28.6139, 77.209];
+  
+  const navigate=useNavigate()
+  const handle_notproceed=()=>{
+    navigate('/customer')
+  }
 
   return (
     <div
@@ -165,14 +199,14 @@ const Location_map_user = () => {
               Your Request Info
             </h5>
             <p><strong><CgProfile /> Name:</strong> {customer?.fullName || "N/A"}</p>
-            <p><strong><FaHammer /> Category:</strong> {serviceReq?.category || "N/A"}</p>
-            <p><strong><MdOutlineDescription /> Description:</strong> {serviceReq?.description || "N/A"}</p>
-            <p><strong><MdNetworkWifi /> Job Status:</strong> {serviceReq?.jobStatus || "N/A"}</p>
-            <p><strong><RiMoneyDollarCircleFill /> Payment:</strong> {serviceReq?.paymentStatus || "N/A"}</p>
+            <p><strong><FaHammer /> Category:</strong> {ser?.category || "N/A"}</p>
+            <p><strong><MdOutlineDescription /> Description:</strong> {ser?.description || "N/A"}</p>
+            <p><strong><MdNetworkWifi /> Job Status:</strong> {ser?.jobStatus || "N/A"}</p>
+            <p><strong><RiMoneyDollarCircleFill /> Payment:</strong> {ser?.paymentStatus || "N/A"}</p>
             <p><strong><AiTwotoneAudio /> Audio Note:</strong></p>
             <audio
               controls
-              src={serviceReq?.audioNoteUrl || ""}
+              src={ser?.audioNoteUrl || ""}
               style={{ width: "100%", marginTop: "6px" }}
             />
           </div>
@@ -189,8 +223,25 @@ const Location_map_user = () => {
             }}
           >
             <div>
-              <h3>OTP is :</h3>
-              <h3>{otp?.otp || "N/A"}</h3>
+              <h3>
+              <button className="btn btn-info" 
+               style={{ width: "170px", fontWeight: "bold" }}
+              >Visiting charge  :</button>
+              <button className="btn btn-warning" 
+               style={{ width: "50px", fontWeight: "bold" }}
+              >59</button>
+              </h3>
+              <button className="btn btn-primary" 
+               style={{ width: "230px", fontWeight: "bold" }}
+              onClick={HandleOnPay}
+              >pay to start</button>
+              {otpShow &&
+              (<div>
+                  <h3 className="d-flex justify-content-center align-items-center flex-column">OTP:</h3>
+                  <h3 className="d-flex justify-content-center align-items-center flex-column">
+                    {otp?.otp || "N/A"}</h3>
+              </div>)
+              }
             </div>
             {!showCancelOptions ? (
               <button
@@ -209,8 +260,9 @@ const Location_map_user = () => {
                   width: "230px",
                 }}
               >
-                <button className="btn btn-warning">Don't want to proceed</button>
-                <button className="btn btn-secondary">Customer not responding</button>
+                <button className="btn btn-warning" 
+                onClick={handle_notproceed}>Don't want to proceed</button>
+                <button className="btn btn-secondary">Worker not responding</button>
               </div>
             )}
           </div>

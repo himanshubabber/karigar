@@ -33,7 +33,7 @@ const Signin_customer = () => {
       });
 
       const customer = res.data?.data?.customer;
-      loginCustomer(customer);
+      loginCustomer(customer,customer.AccessToken);
       alert("Login successful!");
       navigate("/customer", { state: customer });
     } catch (err) {
