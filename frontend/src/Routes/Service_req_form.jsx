@@ -1,5 +1,8 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { Navigate, useNavigate } from "react-router-dom";
+import { useServiceReq } from "../Context/Service_req_context";
+import {useOtp} from "../Context/Otp_context.jsx"
 
 const categories = [
   "plumber", "electrician", "carpenter", "painter",
@@ -13,6 +16,9 @@ const toTitleCase = (str) =>
     .join(" ");
 
 const Service_req_form = () => {
+  const {  storeOtp } = useOtp();
+  const { updateSelectedReq } = useServiceReq();
+  const navigate= useNavigate();
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
   const [audioNoteUrl, setAudioNoteUrl] = useState(null);
@@ -65,6 +71,9 @@ const Service_req_form = () => {
           withCredentials: true
         }
       );
+      console.log(res);
+      const serviceRequestData = res.data?.data;
+      updateSelectedReq(serviceRequestData);
 
       console.log(res.data);
       const serviceRequestId = res.data?.data?._id;
@@ -78,7 +87,16 @@ const Service_req_form = () => {
         { withCredentials: true }
       );
      console.log("OTP generated:", otpRes.data);
-      alert("Service request submitted and OTP generated!");
+     const { otp, expiresAt } = otpRes.data;
+     storeOtp({
+      otp,
+      serviceRequestId,
+      verified: false,
+      expiresAt
+    });
+      
+      alert("Service request submitted and OTP generated! otp is:");
+      navigate('/location_user');
     } catch (err) {
       console.error(err);
       alert("Failed: " + (err.response?.data?.message || err.message));

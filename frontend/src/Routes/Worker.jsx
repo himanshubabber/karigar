@@ -16,7 +16,7 @@ const Worker = () => {
       setWorker(location.state);
     }
   }, [location.state, setWorker]);
-
+  console.log(worker);
   if (!worker) return <p style={{ textAlign: "center", marginTop: "50px" }}>Loading worker info...</p>;
 
   return (

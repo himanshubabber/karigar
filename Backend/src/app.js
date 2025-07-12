@@ -10,7 +10,7 @@ const app = express()
 
 // Temporary: allow both localhost and frontend
 app.use(cors({
-  origin:process.env.cors , 
+  origin:process.env.CORS_ORIGIN , 
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   credentials: true
 }))

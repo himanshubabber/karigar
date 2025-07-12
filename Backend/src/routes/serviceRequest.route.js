@@ -24,9 +24,9 @@ const router = Router();
 
 router.route("/create").post(verifyJWTCustomer, createServiceRequest); 
 router.route("/find-requests").get(findRequests);
-router.route("/:serviceRequestId/accept").post(verifyJWTWorker, acceptRequest);
+router.route("/accept").post(verifyJWTWorker, acceptRequest);
 router.route("/:serviceRequestId/set-quote-amount").patch(verifyJWTWorker, setQuoteAmount);
-router.route("/:serviceRequestId/accept-repair-quote").patch(verifyJWTCustomer, acceptRepairQuote);
+router.route("/accept-repair-quote").patch(verifyJWTCustomer, acceptRepairQuote);
 router.route("/:serviceRequestId/reject-repair-quote").patch(verifyJWTCustomer, rejectRepairQuote);
 router.route("/:serviceRequestId/update-worker-location").patch(verifyJWTWorker, updateWorkerLocation);
 router.route("/:serviceRequestId/cancelled-by-worker-as-customer-not-responding").patch(verifyJWTWorker, cancelledByWorkerAsCustomerNotResponding);

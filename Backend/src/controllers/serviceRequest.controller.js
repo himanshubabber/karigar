@@ -99,7 +99,8 @@ const findRequests = asyncHandler(async (req, res) => {
 
 const acceptRequest = asyncHandler(async (req, res) => {
   const workerId = req.worker?._id;
-  const { serviceRequestId } = req.params;
+  console.log(req.worker)
+  const { serviceRequestId,coordinates } = req.body;
 
   // Find the service request
   const serviceRequest = await ServiceRequest.findById(serviceRequestId);
@@ -117,7 +118,7 @@ const acceptRequest = asyncHandler(async (req, res) => {
   serviceRequest.orderStatus = "connected";
   serviceRequest.workerLocation={
     type: "Point",
-    coordinates: req.worker.currentLocation.coordinates,
+    coordinates,
   }
   serviceRequest.connectedAt = new Date();
   await serviceRequest.save();
@@ -136,38 +137,46 @@ const acceptRequest = asyncHandler(async (req, res) => {
 const setQuoteAmount = asyncHandler(async (req, res) => {
   const workerId = req.worker?._id;
   const { serviceRequestId } = req.params;
-  const { quoteAmount } = req.body;
 
-  // Validate quote amount
-  if (typeof quoteAmount !== "number" || quoteAmount <= 0) {
-    throw new ApiError(400, "Invalid quote amount");
-  }
-
-  // Find the service request
   const serviceRequest = await ServiceRequest.findById(serviceRequestId);
   if (!serviceRequest) {
     throw new ApiError(404, "Service request not found");
   }
 
-  // Check if the request is accepted and belongs to the worker
-  if (serviceRequest.workerId?.toString() !== workerId || serviceRequest.orderStatus === "searching") {
-    throw new ApiError(400, "Service request not accepted by this worker");
+  // Check if the request is already accepted or completed
+  if (serviceRequest.workerId || serviceRequest.orderStatus !== "searching") {
+    throw new ApiError(400, "Service request already accepted or completed");
   }
 
-  // Update the quote amount
-  serviceRequest.quoteAmount = quoteAmount;
-  serviceRequest.orderStatus = "repairAmountQuoted";
+  // Update the service request with worker details
+  serviceRequest.workerId = workerId;
+  serviceRequest.orderStatus = "connected";
+  serviceRequest.workerLocation = {
+    type: "Point",
+    coordinates: req.worker.currentLocation.coordinates,
+  };
+  serviceRequest.connectedAt = new Date();
   await serviceRequest.save();
 
-  const updatedServiceRequest = await ServiceRequest.findById(serviceRequestId).select("_id customerId workerId category description customerLocation workerLocation orderStatus quoteAmount audioNoteUrl");
+  const updatedServiceRequest = await ServiceRequest.findById(
+    serviceRequestId
+  ).select(
+    "_id customerId workerId category description customerLocation workerLocation orderStatus audioNoteUrl "
+  );
 
   if (!updatedServiceRequest) {
-    throw new ApiError(404, "Service request not found after updating quote amount");
+    throw new ApiError(500, "Service request not found after accepting");
   }
 
-  return res.status(200).json(
-    new ApiResponse(200, updatedServiceRequest, "Quote amount set successfully")
-  );
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        updatedServiceRequest,
+        "Service request accepted successfully"
+      )
+    );
 })
 
 const acceptRepairQuote= asyncHandler(async (req, res) => {

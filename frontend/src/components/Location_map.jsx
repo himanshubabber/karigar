@@ -15,20 +15,22 @@ import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility
 import { IoIosInformationCircle } from "react-icons/io";
 import { CgProfile } from "react-icons/cg";
 import { FaHammer } from "react-icons/fa6";
-import {
-  MdOutlineDescription,
-  MdNetworkWifi,
-  MdOutlineAccessTimeFilled,
-  MdOutlineDirectionsRun,
-} from "react-icons/md";
+import { MdOutlineDescription } from "react-icons/md";
+import { MdNetworkWifi } from "react-icons/md";
 import { RiMoneyDollarCircleFill } from "react-icons/ri";
+import { MdOutlineAccessTimeFilled } from "react-icons/md";
 import { AiTwotoneAudio } from "react-icons/ai";
 import { GiMultiDirections } from "react-icons/gi";
 import { TiPin } from "react-icons/ti";
+import { MdOutlineDirectionsRun } from "react-icons/md";
 import { FiMapPin } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { useServiceReq } from "../Context/Service_req_context.jsx";
 import axios from "axios";
+import Otp_timer from "./Otp_timer.jsx";
+
+
+
 
 const sourceIcon = L.icon({
   iconUrl: "https://cdn-icons-png.flaticon.com/512/2202/2202112.png",
@@ -89,17 +91,16 @@ function getBearingAndDistance(from, to) {
   const dLng = lon2 - lon1;
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    Math.cos(lat1) *
+      Math.cos(lat2) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   const d = R * c;
 
   const estimatedTimeMin = Math.round(d / 70);
 
-  return {
-    distance: Math.round(d),
-    bearing: Math.round(brng),
-    time: estimatedTimeMin,
-  };
+  return { distance: Math.round(d), bearing: Math.round(brng), time: estimatedTimeMin };
 }
 
 const Location_map = () => {
@@ -122,9 +123,7 @@ const Location_map = () => {
         (pos) => {
           const coords = [pos.coords.latitude, pos.coords.longitude];
           setUserPosition(coords);
-          fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coords[0]}&lon=${coords[1]}`
-          )
+          fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coords[0]}&lon=${coords[1]}`)
             .then((res) => res.json())
             .then((data) => setAddress(data.display_name || "Address not found"))
             .catch(() => setAddress("Unable to fetch address"));
@@ -140,49 +139,39 @@ const Location_map = () => {
 
   const startTracking = () => setTrack(true);
   const mapCenter = userPosition || [28.6139, 77.209];
-  const distanceInfo =
-    userPosition && destination
-      ? getBearingAndDistance(userPosition, destination)
-      : null;
+  const distanceInfo = userPosition && destination
+    ? getBearingAndDistance(userPosition, destination)
+    : null;
 
-  if (!order || !destination)
-    return <p className="text-center mt-5">No service request selected.</p>;
+  if (!order || !destination) return <p className="text-center mt-5">No service request selected.</p>;
 
   const customer = order.customerId || {};
 
-  // ✅ Corrected OTP Submission
   const handleSubmitOtp = async () => {
     if (!otp) return alert("Please enter OTP");
-     console.log(otp)
-     console.log( order._id)
+  
     try {
       const res = await axios.post(
-        `/api/v1/worker/verify-otp`,
+        `/api/v1/worker/verify-otp`, // Adjust base path if needed
         {
-          serviceRequestId: order._id, // ✅ correct key name
-          otp: otp,
+          serviceRequestId: order._id,
+          otp: otp
         },
         { withCredentials: true }
       );
-
+  
       alert("OTP verified! Job marked as completed.");
-      navigate("/worker");
+      navigate("/worker"); // Or wherever you want to redirect
     } catch (err) {
       console.error("OTP verification failed", err);
       alert(err?.response?.data?.message || "Failed to verify OTP");
     }
   };
 
+  
+
   return (
-    <div
-      style={{
-        display: "flex",
-        padding: "20px",
-        gap: "20px",
-        flexWrap: "nowrap",
-        fontFamily: "Segoe UI, sans-serif",
-      }}
-    >
+    <div style={{ display: "flex", padding: "20px", gap: "20px", flexWrap: "nowrap", fontFamily: "Segoe UI, sans-serif" }}>
       {/* Left Panel */}
       <div style={{ minWidth: "260px", maxWidth: "360px" }}>
         <button
@@ -202,15 +191,7 @@ const Location_map = () => {
           Locate Customer
         </button>
 
-        <div
-          className="card"
-          style={{
-            padding: "20px",
-            borderRadius: "12px",
-            background: "#f8f9fa",
-            boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
-          }}
-        >
+        <div className="card" style={{ padding: "20px", borderRadius: "12px", background: "#f8f9fa", boxShadow: "0 4px 10px rgba(0,0,0,0.08)" }}>
           <h5 className="fw-bold mb-3" style={{ fontSize: "1.2rem" }}>
             <GiMultiDirections size={26} className="me-2 text-black" />
             Navigation Info
@@ -218,29 +199,10 @@ const Location_map = () => {
 
           {userPosition ? (
             <>
-              <p>
-                <strong>
-                  <TiPin size={26} /> Your Location:
-                </strong>{" "}
-                <span className="text-primary">{address}</span>
-              </p>
-              <p>
-                <strong>
-                  <MdOutlineDirectionsRun size={26} /> Distance to Customer:
-                </strong>{" "}
-                <span className="badge bg-info text-dark">
-                  {distanceInfo.distance} m
-                </span>
-              </p>
-              <p>
-                <strong>
-                  <MdOutlineAccessTimeFilled size={26} /> Estimated Time:
-                </strong>{" "}
-                <span className="badge bg-success text-white">
-                  {distanceInfo.time} mins
-                </span>
-              </p>
-
+              <p><strong><TiPin size={26} className="me-2 text-black" />Your Location:</strong> <span className="text-primary">{address}</span></p>
+              <p><strong><MdOutlineDirectionsRun size={26} className="me-2 text-black" />Distance to Customer:</strong> <span className="badge bg-info text-dark">{distanceInfo.distance} m</span></p>
+              <p><strong><MdOutlineAccessTimeFilled size={26} className="me-2 text-black" />Estimated Time:</strong> <span className="badge bg-success text-white">{distanceInfo.time} mins</span></p>
+              
               <a
                 href={`https://www.google.com/maps/dir/?api=1&origin=${userPosition[0]},${userPosition[1]}&destination=${destination[0]},${destination[1]}`}
                 target="_blank"
@@ -256,11 +218,13 @@ const Location_map = () => {
                   textAlign: "center",
                 }}
               >
-                <FiMapPin size={26} /> Open in Google Maps
+                <FiMapPin size={26} className="me-2 text-black" />
+                Open in Google Maps
               </a>
 
               <hr style={{ margin: "15px 0" }} />
-
+              
+              <Otp_timer/>
               <input
                 type="text"
                 value={otp}
@@ -274,20 +238,14 @@ const Location_map = () => {
                   border: "1px solid #ccc",
                 }}
               />
-              <button
-                className="btn btn-success"
-                style={{ width: "100%", marginBottom: "10px" }}
-                onClick={handleSubmitOtp}
+              <button className="btn btn-success" style={{ width: "100%", marginBottom: "10px" }}
+               onClick={handleSubmitOtp}
               >
                 Submit OTP
               </button>
 
               {!showCancelOptions ? (
-                <button
-                  className="btn btn-danger"
-                  style={{ width: "100%" }}
-                  onClick={() => setShowCancelOptions(true)}
-                >
+                <button className="btn btn-danger" style={{ width: "100%" }} onClick={() => setShowCancelOptions(true)}>
                   Cancel
                 </button>
               ) : (
@@ -308,16 +266,7 @@ const Location_map = () => {
       </div>
 
       {/* Map */}
-      <div
-        style={{
-          flexGrow: 1,
-          height: "520px",
-          minWidth: "600px",
-          borderRadius: "12px",
-          boxShadow: "0 3px 10px rgba(0,0,0,0.1)",
-          overflow: "hidden",
-        }}
-      >
+      <div style={{ flexGrow: 1, height: "520px", minWidth: "600px", borderRadius: "12px", boxShadow: "0 3px 10px rgba(0,0,0,0.1)", overflow: "hidden" }}>
         <MapContainer center={mapCenter} zoom={13} style={{ height: "100%", width: "100%" }}>
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           {userPosition && destination && (
@@ -335,29 +284,10 @@ const Location_map = () => {
       </div>
 
       {/* Right Info Card */}
-      <div
-        className="card"
-        style={{
-          minWidth: "260px",
-          maxWidth: "320px",
-          padding: "20px",
-          borderRadius: "12px",
-          background: "#fefefe",
-          boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-          height: "fit-content",
-        }}
-      >
-        <h5
-          className="fw-bold mb-3"
-          style={{
-            fontSize: "1.2rem",
-            color: "#343a40",
-            borderBottom: "1px solid #ccc",
-            paddingBottom: "10px",
-            marginBottom: "20px",
-          }}
-        >
-          <IoIosInformationCircle size={26} /> Customer Request Info
+      <div className="card" style={{ minWidth: "260px", maxWidth: "320px", padding: "20px", borderRadius: "12px", background: "#fefefe", boxShadow: "0 4px 10px rgba(0,0,0,0.1)", height: "fit-content" }}>
+        <h5 className="fw-bold mb-3" style={{ fontSize: "1.2rem", color: "#343a40", borderBottom: "1px solid #ccc", paddingBottom: "10px", marginBottom: "20px" }}>
+          <IoIosInformationCircle size={26} className="me-2 text-black" />
+          Customer Request Info
         </h5>
         <div style={{ lineHeight: "1.8", fontSize: "15px", color: "#212529" }}>
           <p><strong><CgProfile size={20} /> Name:</strong> {customer.fullName || "N/A"}</p>

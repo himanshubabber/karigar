@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useServiceReq } from "../Context/Service_req_context.jsx";
+import axios from "axios"
 
 const Request = ({ request }) => {
   const navigate = useNavigate();
@@ -20,10 +21,39 @@ const Request = ({ request }) => {
     createdAt,
   } = request;
 
-  const handleAccept = () => {
-    updateSelectedReq(request); 
-    setAccepted(true);
-    navigate("/location_worker"); 
+  const handleAccept = async () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation not supported by your browser");
+      return;
+    }
+  
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        console.log("Captured worker location:", [longitude, latitude]);
+        try {
+          const res = await axios.post(
+            "/api/v1/serviceRequest/accept",
+            {
+              serviceRequestId: _id,
+              coordinates: [longitude, latitude],
+            },
+            { withCredentials: true }
+          );
+  
+          updateSelectedReq(res.data.data);
+          setAccepted(true);
+          navigate("/location_worker");
+        } catch (err) {
+          console.error("Accept error:", err);
+          alert("Failed to accept the request.");
+        }
+      },
+      (err) => {
+        console.error("Location error:", err);
+        alert("Location access denied or failed.");
+      }
+    );
   };
 
   return (

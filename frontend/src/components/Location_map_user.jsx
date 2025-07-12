@@ -26,6 +26,13 @@ import { AiTwotoneAudio } from "react-icons/ai";
 
 const destination = [28.682356, 77.064675];
 
+import { useServiceReq } from "../Context/Service_req_context.jsx";
+import {useCustomer} from "../Context/Customer_context.jsx"
+import { useWorker } from "../Context/Worker_context.jsx";
+import { useOtp } from "../Context/Otp_context.jsx";
+
+
+
 const sourceIcon = L.icon({
   iconUrl: "https://cdn-icons-png.flaticon.com/512/2202/2202112.png",
   iconSize: [40, 40],
@@ -59,9 +66,19 @@ function Routing({ from }) {
 }
 
 const Location_map_user = () => {
+  const { customer: customerData  } = useCustomer();
+  const { worker:workerData}=useWorker();
+  const {otpData:otp}=useOtp()
+  console.log({otp})
+  const { selectedReq: ser} = useServiceReq();
   const [userPosition, setUserPosition] = useState(null);
   const [showCancelOptions, setShowCancelOptions] = useState(false);
   const [track, setTrack] = useState(false);
+  console.log(workerData);
+  console.log(customerData);
+  const customer = ser?.
+  customerId || {};
+  console.log("service req from contect",ser);
 
   const order = {
     _id: "1",
@@ -170,20 +187,20 @@ const Location_map_user = () => {
               <IoIosInformationCircle size={22} className="me-2 text-black" />
               Your Request Info
             </h5>
-            <p><strong><CgProfile /> Name:</strong> {order.customer.fullName}</p>
-            <p><strong><FaHammer /> Category:</strong> {order.category}</p>
-            <p><strong><MdOutlineDescription /> Description:</strong> {order.description}</p>
-            <p><strong><MdNetworkWifi /> Job Status:</strong> {order.jobStatus}</p>
-            <p><strong><RiMoneyDollarCircleFill /> Payment:</strong> {order.paymentStatus}</p>
-            <p><strong><MdOutlineAccessTimeFilled /> Created:</strong> {new Date(order.createdAt).toLocaleString()}</p>
+            
+              <p><strong><CgProfile /> Name:</strong> { "N/A"}</p>
+            <p><strong><FaHammer /> Category:</strong> {"N/A"}</p>
+            <p><strong><MdOutlineDescription /> Description:</strong> {"N/A"}</p>
+            <p><strong><MdNetworkWifi /> Job Status:</strong> {"N/A"}</p>
+            <p><strong><RiMoneyDollarCircleFill /> Payment:</strong> { "pending"}</p>
+            {/* <p><strong><MdOutlineAccessTimeFilled size={20} /> Created:</strong> {new Date(customerData.createdAt).toLocaleString()}</p> */}
             <p><strong><AiTwotoneAudio /> Audio Note:</strong></p>
             <audio
               controls
-              src={order.audioNoteUrl}
+              src={"NA"}
               style={{ width: "100%", marginTop: "6px" }}
             />
-          </div>
-
+          </div> 
           {/* Cancel Options */}
           <div
             style={{
@@ -195,6 +212,11 @@ const Location_map_user = () => {
               paddingTop: "40px",
             }}
           >
+            <div>  
+              <h3>OTP is :</h3>
+              <h3>{otp?.otp}</h3>
+            </div>
+            
             {!showCancelOptions ? (
               <button
                 className="btn btn-danger"
@@ -238,7 +260,8 @@ const Location_map_user = () => {
               <IoIosInformationCircle size={22} className="me-2 text-black" />
               Worker Info
             </h5>
-            <p><strong><CgProfile /> Name:</strong> {dummyWorker.name}</p>
+            <p><strong><CgProfile /> Name:</strong>  {dummyWorker.
+name}</p>
             <p><strong><FaStar /> Rating:</strong> {dummyWorker.rating}</p>
             <p><strong><MdOutlineAccessTimeFilled /> Experience:</strong> {dummyWorker.yearOfExperience} yrs</p>
             <p><strong><MdVerifiedUser /> Verified:</strong> {dummyWorker.isVerified ? "✅ Yes" : "❌ No"}</p>

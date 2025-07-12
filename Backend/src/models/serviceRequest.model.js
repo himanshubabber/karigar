@@ -61,40 +61,19 @@ const serviceRequestSchema = new mongoose.Schema(
         required: true,
       },
       coordinates: {
-        type: [Number], // [longitude, latitude]
+        type: [Number],
         required: true,
-        validate: {
-          validator: function (v) {
-            return (
-              Array.isArray(v) &&
-              v.length === 2 &&
-              typeof v[0] === "number" &&
-              typeof v[1] === "number"
-            );
-          },
-          message: "customerLocation.coordinates must be [longitude, latitude]",
-        },
       },
     },
     workerLocation: {
       type: {
         type: String,
         enum: ["Point"],
+        default: undefined,
       },
       coordinates: {
-        type: [Number], // [longitude, latitude]
-        validate: {
-          validator: function (v) {
-            return (
-              !v ||
-              (Array.isArray(v) &&
-                v.length === 2 &&
-                typeof v[0] === "number" &&
-                typeof v[1] === "number")
-            );
-          },
-          message: "workerLocation.coordinates must be [longitude, latitude]",
-        },
+        type: [Number],
+        default: undefined, 
       },
     },
     searchExpiresAt: {
