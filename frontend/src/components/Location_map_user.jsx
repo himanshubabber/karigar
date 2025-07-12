@@ -12,6 +12,7 @@ import "leaflet-routing-machine";
 import "leaflet-routing-machine/dist/leaflet-routing-machine.css";
 import "leaflet-defaulticon-compatibility";
 import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css";
+
 import { IoIosInformationCircle } from "react-icons/io";
 import { CgProfile } from "react-icons/cg";
 import { FaHammer, FaStar } from "react-icons/fa6";
@@ -24,14 +25,10 @@ import {
 import { RiMoneyDollarCircleFill } from "react-icons/ri";
 import { AiTwotoneAudio } from "react-icons/ai";
 
-const destination = [28.682356, 77.064675];
-
 import { useServiceReq } from "../Context/Service_req_context.jsx";
-import {useCustomer} from "../Context/Customer_context.jsx"
-import { useWorker } from "../Context/Worker_context.jsx";
 import { useOtp } from "../Context/Otp_context.jsx";
 
-
+const destination = [28.682356, 77.064675];
 
 const sourceIcon = L.icon({
   iconUrl: "https://cdn-icons-png.flaticon.com/512/2202/2202112.png",
@@ -66,48 +63,51 @@ function Routing({ from }) {
 }
 
 const Location_map_user = () => {
-  const { customer: customerData  } = useCustomer();
-  const { worker:workerData}=useWorker();
-  const {otpData:otp}=useOtp()
-  console.log({otp})
-  const { selectedReq: ser} = useServiceReq();
+  const { selectedReq: ser } = useServiceReq();
+  const { otpData: otp } = useOtp();
+
+  const serviceRequestId = ser?._id;
+
+  const [worker, setWorker] = useState(null);
+  const [customer, setCustomer] = useState(null);
+  const [serviceReq, setServiceReq] = useState(null);
   const [userPosition, setUserPosition] = useState(null);
   const [showCancelOptions, setShowCancelOptions] = useState(false);
   const [track, setTrack] = useState(false);
-  console.log(workerData);
-  console.log(customerData);
-  const customer = ser?.
-  customerId || {};
-  console.log("service req from contect",ser);
 
-  const order = {
-    _id: "1",
-    category: "plumber",
-    orderStatus: "searching",
-    jobStatus: "pending",
-    description: "Kitchen tap leaking",
-    paymentStatus: "pending",
-    createdAt: Date.now(),
-    customer: { fullName: "Aman Verma" },
-    audioNoteUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-    customerLocation: { coordinates: [77.1025, 28.7041] },
-  };
+  // Fetch worker & customer from backend
+  useEffect(() => {
+    if (serviceRequestId) {
+      (async () => {
+        try {
+          const res = await fetch("/api/v1/service-request/get-service-details", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ serviceRequestId }),
+          });
 
-  const dummyWorker = {
-    name: "Rohit Kumar",
-    rating: 4.8,
-    yearOfExperience: 5,
-    isVerified: true,
-    isOnline: true,
-    workingCategory: ["plumber", "ac", "laptop", "electrician"],
-  };
+          const data = await res.json();
+          if (res.ok && data?.data) {
+            setWorker(data.data.worker);
+            setCustomer(data.data.customer);
+            setServiceReq(data.data.serviceRequest);
+          } else {
+            console.error("Failed to load details:", data.message);
+          }
+        } catch (error) {
+          console.error("Error fetching service details:", error);
+        }
+      })();
+    }
+  }, [serviceRequestId]);
 
-  // 🟢 Start location tracking immediately on mount
+  // Start tracking user location
   useEffect(() => {
     setTrack(true);
   }, []);
 
-  // 🛰️ Track worker location
   useEffect(() => {
     let watchId;
     if (track) {
@@ -125,15 +125,7 @@ const Location_map_user = () => {
   const mapCenter = userPosition || [28.6139, 77.209];
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        padding: "20px",
-        fontFamily: "Segoe UI, sans-serif",
-      }}
-    >
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "20px", fontFamily: "Segoe UI, sans-serif" }}>
       <div style={{ width: "80%", maxWidth: "1200px" }}>
         {/* Map Section */}
         <div style={{ width: "100%", marginBottom: "20px" }}>
@@ -163,60 +155,36 @@ const Location_map_user = () => {
         </div>
 
         {/* Info Cards Section */}
-        <div
-          style={{
-            display: "flex",
-            gap: "20px",
-            flexWrap: "wrap",
-            justifyContent: "center",
-          }}
-        >
+        <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", justifyContent: "center" }}>
           {/* Request Info */}
-          <div
-            style={{
-              flex: 1,
-              minWidth: "280px",
-              maxWidth: "400px",
-              background: "#f8f9fa",
-              padding: "20px",
-              borderRadius: "12px",
-              boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-            }}
-          >
+          <div style={{
+            flex: 1,
+            minWidth: "280px",
+            maxWidth: "400px",
+            background: "#f8f9fa",
+            padding: "20px",
+            borderRadius: "12px",
+            boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+          }}>
             <h5 style={{ fontSize: "1.2rem", marginBottom: "15px" }}>
               <IoIosInformationCircle size={22} className="me-2 text-black" />
               Your Request Info
             </h5>
-            
-              <p><strong><CgProfile /> Name:</strong> { "N/A"}</p>
-            <p><strong><FaHammer /> Category:</strong> {"N/A"}</p>
-            <p><strong><MdOutlineDescription /> Description:</strong> {"N/A"}</p>
-            <p><strong><MdNetworkWifi /> Job Status:</strong> {"N/A"}</p>
-            <p><strong><RiMoneyDollarCircleFill /> Payment:</strong> { "pending"}</p>
-            {/* <p><strong><MdOutlineAccessTimeFilled size={20} /> Created:</strong> {new Date(customerData.createdAt).toLocaleString()}</p> */}
+            <p><strong><CgProfile /> Name:</strong> {customer?.fullName || "N/A"}</p>
+            <p><strong><FaHammer /> Category:</strong> {serviceReq?.category || "N/A"}</p>
+            <p><strong><MdOutlineDescription /> Description:</strong> {serviceReq?.description || "N/A"}</p>
+            <p><strong><MdNetworkWifi /> Job Status:</strong> {serviceReq?.jobStatus || "N/A"}</p>
+            <p><strong><RiMoneyDollarCircleFill /> Payment:</strong> {serviceReq?.paymentStatus || "N/A"}</p>
             <p><strong><AiTwotoneAudio /> Audio Note:</strong></p>
-            <audio
-              controls
-              src={"NA"}
-              style={{ width: "100%", marginTop: "6px" }}
-            />
-          </div> 
+            <audio controls src={serviceReq?.audioNoteUrl || ""} style={{ width: "100%", marginTop: "6px" }} />
+          </div>
+
           {/* Cancel Options */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              gap: "10px",
-              alignItems: "center",
-              paddingTop: "40px",
-            }}
-          >
-            <div>  
+          <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: "10px", alignItems: "center", paddingTop: "40px" }}>
+            <div>
               <h3>OTP is :</h3>
-              <h3>{otp?.otp}</h3>
+              <h3>{otp?.otp || "N/A"}</h3>
             </div>
-            
             {!showCancelOptions ? (
               <button
                 className="btn btn-danger"
@@ -226,63 +194,58 @@ const Location_map_user = () => {
                 Cancel
               </button>
             ) : (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "10px",
-                  width: "230px",
-                }}
-              >
-                <button className="btn btn-warning">
-                  Don't want to proceed
-                </button>
-                <button className="btn btn-secondary">
-                  Customer not responding
-                </button>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px", width: "230px" }}>
+                <button className="btn btn-warning">Don't want to proceed</button>
+                <button className="btn btn-secondary">Customer not responding</button>
               </div>
             )}
           </div>
 
           {/* Worker Info */}
-          <div
-            style={{
-              flex: 1,
-              minWidth: "280px",
-              maxWidth: "400px",
-              background: "#f8f9fa",
-              padding: "20px",
-              borderRadius: "12px",
-              boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-            }}
-          >
+          <div style={{
+            flex: 1,
+            minWidth: "280px",
+            maxWidth: "400px",
+            background: "#f8f9fa",
+            padding: "20px",
+            borderRadius: "12px",
+            boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+          }}>
             <h5 style={{ fontSize: "1.2rem", marginBottom: "15px" }}>
               <IoIosInformationCircle size={22} className="me-2 text-black" />
               Worker Info
             </h5>
-            <p><strong><CgProfile /> Name:</strong>  {dummyWorker.
-name}</p>
-            <p><strong><FaStar /> Rating:</strong> {dummyWorker.rating}</p>
-            <p><strong><MdOutlineAccessTimeFilled /> Experience:</strong> {dummyWorker.yearOfExperience} yrs</p>
-            <p><strong><MdVerifiedUser /> Verified:</strong> {dummyWorker.isVerified ? "✅ Yes" : "❌ No"}</p>
-            <p><strong>Status:</strong> {dummyWorker.isOnline ? "🟢 Online" : "🔴 Offline"}</p>
-            <div className="d-flex flex-wrap gap-2 mt-2">
-              {dummyWorker.workingCategory.map((cat, idx) => (
-                <span
-                  key={idx}
-                  className="badge bg-primary text-light"
-                  style={{
-                    textTransform: "capitalize",
-                    fontSize: "1.1rem",
-                    padding: "0.5rem 1rem",
-                    borderRadius: "14px",
-                    fontWeight: "600",
-                  }}
-                >
-                  {cat}
-                </span>
-              ))}
-            </div>
+
+            {worker && worker._id ? (
+              <>
+                <p><strong><CgProfile /> Name:</strong> {worker.name}</p>
+                <p><strong><FaStar /> Rating:</strong> {worker.rating}</p>
+                <p><strong><MdOutlineAccessTimeFilled /> Experience:</strong> {worker.yearOfExperience} yrs</p>
+                <p><strong><MdVerifiedUser /> Verified:</strong> {worker.isVerified ? "✅ Yes" : "❌ No"}</p>
+                <p><strong>Status:</strong> {worker.isOnline ? "🟢 Online" : "🔴 Offline"}</p>
+                <div className="d-flex flex-wrap gap-2 mt-2">
+                  {worker.workingCategory?.map((cat, idx) => (
+                    <span
+                      key={idx}
+                      className="badge bg-primary text-light"
+                      style={{
+                        textTransform: "capitalize",
+                        fontSize: "1.1rem",
+                        padding: "0.5rem 1rem",
+                        borderRadius: "14px",
+                        fontWeight: "600",
+                      }}
+                    >
+                      {cat}
+                    </span>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p style={{ color: "#555", fontStyle: "italic", marginTop: "1rem" }}>
+                🚫 Worker not connected yet.
+              </p>
+            )}
           </div>
         </div>
       </div>

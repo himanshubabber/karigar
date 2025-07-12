@@ -716,6 +716,35 @@ const reportWorker = asyncHandler(async (req, res) => {
   );
 })
 
+ const getServiceRequestDetails = asyncHandler(async (req, res) => {
+  const { id } = req.body.serviceRequestId;
+
+  const serviceRequest = await ServiceRequest.findById(id);
+  if (!serviceRequest) {
+    throw new ApiError(404, "Service Request not found");
+  }
+
+  const [customer, worker] = await Promise.all([
+    Customer.findById(serviceRequest.customerId).select("-password"), // Exclude sensitive info
+    Worker.findById(serviceRequest.workerId).select("-password"),
+  ]);
+
+  if (!customer || !worker) {
+    throw new ApiError(404, "Customer or Worker not found");
+  }
+
+  return res.status(200).json(
+    new ApiResponse(200, {
+      serviceRequest,
+      customer,
+      worker,
+    }, "Service request with full details fetched")
+  );
+});
+
+
+
+
 
 
 export {
@@ -734,5 +763,6 @@ export {
   cancelBySystemAsNotConnected,
   cancelledBySystemAsUnattended,
   rateWorker,
-  reportWorker
+  reportWorker,
+  getServiceRequestDetails,
 };
