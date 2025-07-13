@@ -251,6 +251,19 @@ const generateOtpobj = asyncHandler(async (req, res) => {
   });
 });
 
+const getCustomerServiceHistory = asyncHandler(async (req, res) => {
+  const customerId = req.customer?._id;
+
+  const serviceRequests = await serviceRequests.find({ customerId })
+    .sort({ createdAt: -1 })
+    .select("_id category quoteAmount visitingCharge orderStatus jobStatus createdAt completedAt");
+
+  return res.status(200).json(
+    new ApiResponse(200, serviceRequests, "Customer service history fetched")
+  );
+});
+
+
 export {
   registerCustomer,
   loginCustomer,
@@ -264,4 +277,5 @@ export {
   updateAddress,
   updateFullName,
   generateOtpobj,
+  getCustomerServiceHistory,
 };

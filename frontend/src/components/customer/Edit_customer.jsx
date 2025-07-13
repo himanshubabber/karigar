@@ -98,7 +98,7 @@ const Edit_customer = () => {
   return (
     <div className="container mt-5">
       <div
-        className="card shadow p-4"
+        className="card shadow p-4 rounded-xl p-4 bg-white shadow-lg"
         style={{ maxWidth: "600px", margin: "0 auto", borderRadius: "16px" }}
       >
         <h3 className="text-center mb-4">Edit Customer Profile</h3>

@@ -1,29 +1,20 @@
 import { useState } from "react";
 import axios from "axios";
-import { Navigate, useNavigate } from "react-router-dom";
-
-const categories = [
-  "plumber",
-  "electrician",
-  "tv",
-  "fridge",
-  "ac",
-  "washing machine",
-  "laptop",
-];
+import { useNavigate } from "react-router-dom";
 
 const Signup_worker = () => {
+  const navigate = useNavigate();
 
-  const navigate= useNavigate();
   const [form, setForm] = useState({
     fullName: "",
     email: "",
     phone: "",
     address: "",
     password: "",
-    yearOfExperience: 0,
-    workingCategory: [],
   });
+
+  const [profilePhoto, setProfilePhoto] = useState(null);
+  const [previewPhoto, setPreviewPhoto] = useState(null);
 
   const handleChange = (e) => {
     setForm((prev) => ({
@@ -32,166 +23,98 @@ const Signup_worker = () => {
     }));
   };
 
-  const handleCategoryChange = (e) => {
-    const value = e.target.value;
-    setForm((prev) => ({
-      ...prev,
-      workingCategory: prev.workingCategory.includes(value)
-        ? prev.workingCategory.filter((c) => c !== value)
-        : [...prev.workingCategory, value],
-    }));
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setProfilePhoto(file);
+      setPreviewPhoto(URL.createObjectURL(file));
+    }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSignup = async (e) => {
     e.preventDefault();
-    const {
-      fullName,
-      email,
-      phone,
-      address,
-      password,
-      workingCategory,
-      yearOfExperience,
-    } = form;
+    const { fullName, email, phone, address, password } = form;
 
-    if (
-      !fullName ||
-      !email ||
-      !phone ||
-      !address ||
-      password.length < 8 ||
-      workingCategory.length === 0
-    ) {
-      alert("Please fill all required fields correctly.");
+    if (!fullName || !email || !phone || !address || password.length < 8) {
+      alert("Please fill all fields correctly. Password must be at least 8 characters.");
       return;
     }
 
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const dataToSend = {
-          fullName,
-          email,
-          phone,
-          address,
-          password,
-          yearOfExperience,
-          workingCategory,
-          startLocation: {
-            type: "Point",
-            coordinates: [
-              position.coords.longitude,
-              position.coords.latitude,
-            ],
-          },
-        };
+    try {
+      const formData = new FormData();
+      Object.keys(form).forEach((key) => {
+        formData.append(key, form[key]);
+      });
 
-        try {
-          const res = await axios.post("/api/v1/worker/register", dataToSend);
-          alert("Worker signed up successfully!");
-          navigate('/signin');
-          console.log(res.data);
-        } catch (err) {
-          console.error("Signup failed", err);
-          alert("Signup failed: " + (err.response?.data?.message || err.message));
-        }
-      },
-      (err) => {
-        console.error("Geolocation error", err);
-        alert("Location access is required for signup.");
+      if (profilePhoto) {
+        formData.append("profilePhoto", profilePhoto);
       }
-    );
+
+      const res = await axios.post("/api/v1/worker/register", formData, {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      alert("Worker signup successful!");
+      navigate("/signin_worker");
+    } catch (err) {
+      console.error(err);
+      alert("Signup failed: " + (err.response?.data?.message || err.message));
+    }
   };
 
   return (
     <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
       <div className="card shadow" style={{ width: "28rem" }}>
         <div className="card-body">
-          <h3 className="text-center mb-4">Worker Signup</h3>
-          <form onSubmit={handleSubmit}>
-            <div className="mb-2">
-              <label className="form-label">Full Name</label>
-              <input
-                type="text"
-                name="fullName"
-                className="form-control"
-                value={form.fullName}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="mb-2">
-              <label className="form-label">Email</label>
-              <input
-                type="email"
-                name="email"
-                className="form-control"
-                value={form.email}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="mb-2">
-              <label className="form-label">Phone</label>
-              <input
-                type="text"
-                name="phone"
-                className="form-control"
-                value={form.phone}
-                onChange={handleChange}
-                placeholder="10-digit number"
-              />
-            </div>
-            <div className="mb-2">
-              <label className="form-label">Address</label>
-              <input
-                type="text"
-                name="address"
-                className="form-control"
-                value={form.address}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="mb-2">
-              <label className="form-label">Password</label>
-              <input
-                type="password"
-                name="password"
-                className="form-control"
-                value={form.password}
-                onChange={handleChange}
-                placeholder="At least 8 characters"
-              />
-            </div>
-            <div className="mb-2">
-              <label className="form-label">Years of Experience</label>
-              <input
-                type="number"
-                name="yearOfExperience"
-                className="form-control"
-                value={form.yearOfExperience}
-                onChange={handleChange}
-                min={0}
-              />
-            </div>
-            <div className="mb-3">
-              <label className="form-label">Working Categories</label>
-              <div className="d-flex flex-wrap gap-2">
-                {categories.map((cat) => (
-                  <div key={cat} className="form-check">
-                    <input
-                      className="form-check-input"
-                      type="checkbox"
-                      value={cat}
-                      id={cat}
-                      onChange={handleCategoryChange}
-                      checked={form.workingCategory.includes(cat)}
-                    />
-                    <label className="form-check-label" htmlFor={cat}>
-                      {cat}
-                    </label>
-                  </div>
-                ))}
+          <h4 className="text-center mb-4">Worker Signup</h4>
+          <form onSubmit={handleSignup} encType="multipart/form-data">
+            {/* Worker Fields */}
+            {["fullName", "email", "phone", "address", "password"].map((field) => (
+              <div className="mb-3" key={field}>
+                <label className="form-label">
+                  {field.charAt(0).toUpperCase() + field.slice(1)}
+                </label>
+                <input
+                  type={field === "password" ? "password" : "text"}
+                  className="form-control"
+                  name={field}
+                  value={form[field]}
+                  onChange={handleChange}
+                  placeholder={field === "password" ? "At least 8 characters" : `Enter ${field}`}
+                  required
+                />
               </div>
+            ))}
+
+            {/* Profile Photo Upload (before submit) */}
+            <div className="mb-3">
+              <label className="form-label">Profile Photo (optional)</label>
+              <input
+                type="file"
+                accept="image/*"
+                className="form-control"
+                onChange={handlePhotoChange}
+              />
+              {previewPhoto && (
+                <div className="text-center mt-3">
+                  <img
+                    src={previewPhoto}
+                    alt="Preview"
+                    className="rounded-circle shadow"
+                    style={{ width: "100px", height: "100px", objectFit: "cover" }}
+                  />
+                  <p className="text-muted mt-1" style={{ fontSize: "0.85rem" }}>
+                    Preview
+                  </p>
+                </div>
+              )}
             </div>
-            <button type="submit" className="btn btn-primary w-100">
+
+            {/* Submit Button */}
+            <button type="submit" className="btn btn-primary w-100 mt-3">
               Sign Up
             </button>
           </form>
