@@ -75,7 +75,7 @@ const Location_map_user = () => {
   const HandleOnPay=()=>{
     setOtpShow(true)
   }
-
+  console.log(ser);
   const serviceRequestId=ser?._id;
   console.log(serviceRequestId)
   useEffect(() => {
@@ -134,6 +134,77 @@ const Location_map_user = () => {
   const handle_notproceed=()=>{
     navigate('/customer')
   }
+
+
+  // payment handle here
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  const handlePayment = async () => {
+    const res = await loadRazorpayScript();
+    if (!res) {
+      alert("Razorpay SDK failed to load. Check your connection.");
+      return;
+    }
+  
+    try {
+      const { data } = await axios.post(
+        `/api/v1/payment/${serviceRequestId}/create-order`,
+        {},
+        { headers: { Authorization: `Bearer ${customer?.token}` } }
+      );
+  
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID, // your Razorpay key
+        amount: data.amount,
+        currency: data.currency,
+        name: "Karigar",
+        description: "Service payment",
+        order_id: data.id,
+        handler: async function (response) {
+          try {
+            const verifyRes = await axios.post(
+              `/api/v1/payment/${serviceRequestId}/verify-payment`,
+              {
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpaySignature: response.razorpay_signature,
+              },
+              { headers: { Authorization: `Bearer ${customer?.token}` } }
+            );
+  
+            alert("Payment successful!");
+            setOtpShow(true);
+          } catch (err) {
+            console.error("Payment verification failed:", err);
+            alert("Payment failed to verify.");
+          }
+        },
+        prefill: {
+          name: customer?.fullName || "Customer",
+          email: customer?.email || "customer@example.com",
+          contact: customer?.phone || "9999999999",
+        },
+        theme: {
+          color: "#3399cc",
+        },
+      };
+  
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (err) {
+      console.error("Order creation failed:", err);
+      alert("Unable to initiate payment.");
+    }
+  };
+  
 
   return (
     <div
@@ -233,7 +304,7 @@ const Location_map_user = () => {
               </h3>
               <button className="btn btn-primary" 
                style={{ width: "230px", fontWeight: "bold" }}
-              onClick={HandleOnPay}
+              onClick={handlePayment}
               >pay to start</button>
               {otpShow &&
               (<div>
