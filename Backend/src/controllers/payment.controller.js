@@ -1,258 +1,276 @@
-import razorpay from "razorpay";
-import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { Worker } from "../models/worker.model.js";
-import { ServiceRequest } from "../models/serviceRequest.model.js";
-import { platformCharge } from "../constants.js";
-import { Transaction } from "../models/transaction.model.js";
-import crypto from "crypto";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { Customer } from "../models/customer.model.js";
+import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import jwt from "jsonwebtoken";
 
-const razorpayInstance = new razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
+const generateAccessAndRefreshTokens = async(customerId)=>{
+    try {
+        const customer = await Customer.findById(customerId);
+        const accessToken = customer.generateAccessToken();
+        const refreshToken = customer.generateRefreshToken();
+        customer.refreshToken = refreshToken;
+        await customer.save({validateBeforeSave: false});
+        return { accessToken, refreshToken };
+    } catch (error) {
+        throw new ApiError(500, "Failed to generate tokens");
+    }
+}
 
-const createOrder = asyncHandler(async (req, res) => {
-  const { serviceRequestId } = req.params;
-  if (!serviceRequestId) {
-    throw new ApiError(400, "Service Request ID is required");
-  }
+const registerCustomer = asyncHandler(async (req, res) => {
 
-  const serviceRequest = await ServiceRequest.findById(serviceRequestId);
-  if (!serviceRequest) {
-    throw new ApiError(404, "Service Request not found");
-  }
+    const { fullName, email, password, phone, address } = req.body;
 
-  let amount;
-  let currency = "INR"; // Default currency
-
-  if (serviceRequest.orderStatus === "accepted") {
-    amount = serviceRequest.quoteAmount;
-  } else if (serviceRequest.orderStatus === "rejected") {
-    amount = serviceRequest.visitingCharge;
-  } else {
-    throw new ApiError(400, "Invalid order status for payment");
-  }
-  if (!amount || !currency) {
-    throw new ApiError(400, "Amount and currency are required");
-  }
-
-  const options = {
-    amount: amount * 100, // Amount in paise
-    currency: currency,
-    receipt: `receipt_${new Date().getTime()}`,
-  };
-
-  const order = await razorpayInstance.orders.create(options);
-  if (!order) {
-    throw new ApiError(500, "Failed to create order");
-  }
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, order, "Order created successfully"));
-});
-
-const createOrderForWorker = asyncHandler(async (req, res) => {
-  const workerId = req.worker?._id;
-  const { amount } = req.body;
-  const currency = "INR";
-  if (!workerId) {
-    throw new ApiError(400, "Worker ID is required");
-  }
-
-  const worker = await Worker.findById(workerId);
-  if (!worker) {
-    throw new ApiError(404, "Worker not found");
-  }
-
-  if (!amount || !currency) {
-    throw new ApiError(400, "Amount and currency are required");
-  }
-
-  const options = {
-    amount: amount * 100, // Amount in paise
-    currency: currency,
-    receipt: `receipt_${new Date().getTime()}`,
-  };
-
-  const order = await razorpayInstance.orders.create(options);
-  if (!order) {
-    throw new ApiError(500, "Failed to create order");
-  }
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, order, "Order created successfully"));
-});
-
-const verifyPayment = asyncHandler(async (req, res) => {
-  const { razorpayPaymentId, razorpayOrderId, razorpaySignature } = req.body;
-  const { serviceRequestId } = req.params;
-  if (!serviceRequestId) {
-    throw new ApiError(400, "Service Request ID is required");
-  }
-
-  if (!razorpayPaymentId || !razorpayOrderId || !razorpaySignature) {
-    throw new ApiError(400, "Razorpay payment details are required");
-  }
-
-  const generatedSignature = crypto
-    .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-    .update(`${razorpayOrderId}|${razorpayPaymentId}`)
-    .digest("hex");
-
-  if (generatedSignature !== razorpaySignature) {
-    throw new ApiError(400, "Invalid payment signature");
-  }
-
-  const serviceRequest = await ServiceRequest.findById(serviceRequestId);
-    if (!serviceRequest) {
-        throw new ApiError(404, "Service Request not found");
+    if (!fullName || !email || !password || !phone || !address) {
+        throw new ApiError(400, "All fields are required");
     }
 
-    const worker = await Worker.findById(serviceRequest.workerId);
-    if (!worker) { 
-        throw new ApiError(404, "Worker not found");
+    const existingCustomer = await Customer.findOne({ email });
+    if (existingCustomer) {
+        throw new ApiError(400, "Customer with this email already exists");
     }
 
-  let amount;
-  if (serviceRequest.orderStatus === "accepted") {
-    amount = serviceRequest.quoteAmount;
-  } else if (serviceRequest.orderStatus === "rejected") {
-    amount = serviceRequest.visitingCharge;
-  }else {
-    throw new ApiError(400, "Invalid order status for payment");
-  }
+    const profilePhotoLocalPath = req.file?.path
 
+    let profilePhoto;
+    if(profilePhotoLocalPath){
+        profilePhoto = await uploadOnCloudinary(profilePhotoLocalPath);
+    }
 
-  serviceRequest.jobStatus = "completed";
-  serviceRequest.paymentStatus = "paid";
-  serviceRequest.paymentType = "online";
-  serviceRequest.paidAt = new Date();
-  await serviceRequest.save();
+    const customer = await Customer.create({
+        fullName,
+        email,
+        password,
+        phone,
+        address,
+        profilePhoto: profilePhoto?.url || ""
+    })
 
-    if (!amount) {
-        throw new ApiError(400, "Amount is required for payment verification");
-    }   
-    worker.walletBalance += parseFloat(amount);
-    await worker.save();
-    await worker.deductPlatformFee();
+    const createdCustomer = await Customer.findById(customer._id).select("-password -refreshToken");
+
+    if (!createdCustomer) {
+        throw new ApiError(500, "Customer creation failed");
+    }
+
+    return res.status(201).json(
+        new ApiResponse(201,createdCustomer, "Customer registered successfully")
+    )
+})
+
+const loginCustomer = asyncHandler(async (req, res) => {
+
+    const { email, password } = req.body;
+    if(!email){
+        throw new ApiError(400, "Email is required");
+    }
+    if(!password){
+        throw new ApiError(400, "Password is required");
+    }
+
+    const customer = await Customer.findOne({email})
+
+    if(!customer){
+        throw new ApiError(404, "User does not exist");
+    }
+
+    const isPasswordCorrect = await customer.isPasswordCorrect(password);
+    if(!isPasswordCorrect){
+        throw new ApiError(400, "Incorrect password");
+    }
+
+    const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(customer._id);
+
+    const loggedInCustomer = await Customer.findById(customer._id).select("-password -refreshToken");
+
+    const options={
+        httpOnly: true,
+        secure: true,
+    }
+
+    return res
+        .cookie("refreshToken", refreshToken, options)
+        .cookie("accessToken", accessToken, options)
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                {
+                    customer:loggedInCustomer,
+                    refreshToken,
+                    accessToken
+                }, 
+                "Customer logged in successfully"
+            )
+        )
+})
+
+const logoutCustomer = asyncHandler(async(req, res) => {
+    await Customer.findByIdAndUpdate(
+        req.customer._id,
+        {
+            $unset: {
+                refreshToken: 1 
+            }
+        },
+        {
+            new: true
+        }
+    )
+
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+
+    return res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, {}, "User logged Out"))
+})
+
+const refreshAccessToken = asyncHandler(async (req, res) => {
+    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
+
+    if (!incomingRefreshToken) {
+        throw new ApiError(401, "Unauthorized request")
+    }
+
+    try {
+        const decodedToken = jwt.verify(
+            incomingRefreshToken,
+            process.env.REFRESH_TOKEN_SECRET
+        )
+    
+        const customer = await Customer.findById(decodedToken?._id)
+    
+        if (!customer) {
+            throw new ApiError(401, "Invalid refresh token")
+        }
+    
+        if (incomingRefreshToken !== customer?.refreshToken) {
+            throw new ApiError(401, "Refresh token is expired or used") //ud....................
+        }
+    
+        const options = {
+            httpOnly: true,
+            secure: true
+        }
+    
+        const {accessToken, refreshToken} = await generateAccessAndRefreshTokens(customer._id)
+    
+        return res
+        .status(200)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", refreshToken, options)
+        .json(
+            new ApiResponse(
+                200, 
+                {accessToken, refreshToken},
+                "Access token refreshed"
+            )
+        )
+    } catch (error) {
+        throw new ApiError(401, error?.message || "Invalid refresh token")
+    }
+
+})
+
+const changeCurrentPassword = asyncHandler(async(req, res) => {
+    const {oldPassword, newPassword} = req.body
+
     
 
-    const transactionCredit = await Transaction.create({
-        workerId: worker._id,
-        amount: parseFloat(amount),
-        type: "credit",
-        description: `Payment received for service request ${serviceRequestId}`,
-        platformFee: false,
-        serviceRequestId: serviceRequest._id,
-    })
-    if (!transactionCredit) {
-        throw new ApiError(500, "Failed to record credit transaction");
+    const customer = await Customer.findById(req.customer?._id)
+    const isPasswordCorrect = await customer.isPasswordCorrect(oldPassword)
+
+    if (!isPasswordCorrect) {
+        throw new ApiError(400, "Invalid old password")
     }
 
-    const transactionDebit = await Transaction.create({
-        workerId: worker._id,
-        amount: platformCharge,
-        type: "debit",
-        description: `Platform fee for service request ${serviceRequestId}`,
-        platformFee: true,
-        serviceRequestId: serviceRequest._id,
-    })
+    customer.password = newPassword
+    await customer.save({validateBeforeSave: false})
 
-    if (!transactionDebit) {
-        throw new ApiError(500, "Failed to record debit transaction");
-    }
-       
-  return res
+    return res
     .status(200)
-    .json(
-      new ApiResponse(200, { transactionCredit, transactionDebit }, "Payment verified successfully")
-    );
-});
+    .json(new ApiResponse(200, {}, "Password changed successfully"))
+})
 
-const verifyPaymentForWorker = asyncHandler(async (req, res) => {
-  const { razorpayPaymentId, razorpayOrderId, razorpaySignature, amount } =
-    req.body;
-  const workerId = req.worker?._id;
+const getCurrentCustomer= asyncHandler(async(req, res) => {
+    return res
+    .status(200)
+    .json(new ApiResponse(
+        200,
+        req.customer,
+        "User fetched successfully"
+    ))
+})
 
-  if (!workerId) {
-    throw new ApiError(400, "Worker ID is required");
-  }
+const updateProfilePhoto= asyncHandler(async(req, res) => {
+    const profilePhotoLocalPath = req.file?.path
 
-  if (!razorpayPaymentId || !razorpayOrderId || !razorpaySignature || !amount) {
-    throw new ApiError(400, "Razorpay payment details are required");
-  }
-
-  const generatedSignature = crypto
-    .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-    .update(`${razorpayOrderId}|${razorpayPaymentId}`)
-    .digest("hex");
-
-  if (generatedSignature !== razorpaySignature) {
-    throw new ApiError(400, "Invalid payment signature");
-  }
-
-  const worker = await Worker.findById(workerId);
-  if (!worker) {
-    throw new ApiError(404, "Worker not found");
-  }
-
-  worker.walletBalance += parseFloat(amount);
-  await worker.save();
-
-    const transactionCredit = await Transaction.create({
-    workerId: worker._id,
-    amount: parseFloat(amount),
-    type: "credit",
-    description: `Wallet recharge `,
-    platformFee: false
-    })
-
-    if (!transactionCredit) {
-        throw new ApiError(500, "Failed to record credit transaction");
+    if (!profilePhotoLocalPath) {
+        throw new ApiError(400, "Profile Photo file is missing")
     }
 
-  return res
+    const profilePhoto = await uploadOnCloudinary(profilePhotoLocalPath)
+
+    if (!profilePhoto?.url) {
+        throw new ApiError(400, "Error while uploading Profile Photo")
+        
+    }
+
+    const customer = await Customer.findByIdAndUpdate(
+        req.customer?._id,
+        {
+            $set:{
+                profilePhoto: profilePhoto.url
+            }
+        },
+        {new: true}
+    ).select("-password -refreshToken")
+
+    return res
     .status(200)
     .json(
-      new ApiResponse(200, transactionCredit, "Payment verified successfully")
-    );
-});
+        new ApiResponse(200, customer, "Profile Photo updated successfully")
+    )
+})
 
-const paymentReceivedByCash = asyncHandler(async (req, res) => {
-  const { serviceRequestId } = req.params;
+const updateCustomerDetails = asyncHandler(async(req, res) => {
+    const {fullName,email,address,phone} = req.body
 
-  if (!serviceRequestId) {
-    throw new ApiError(400, "Service Request ID is required");
-  }
+    if (!email || !fullName || !address || !phone) {
+        throw new ApiError(400, "all fields are required to update profile")
+    }
 
-  const serviceRequest = await ServiceRequest.findById(serviceRequestId);
-  if (!serviceRequest) {
-    throw new ApiError(404, "Service Request not found");
-  }
+    const customer = await Customer.findByIdAndUpdate(
+        req.customer?._id,
+        {
+            $set: {
+                email: email,
+                fullName: fullName,
+                address: address,
+                phone: phone
+            }
+        },
+        {new: true}
+        
+    ).select("-password -refreshToken");
 
-  serviceRequest.jobStatus = "completed";
-  serviceRequest.paymentStatus = "paid";
-  serviceRequest.paymentType = "cash";
-  serviceRequest.paidAt = new Date();
-  await serviceRequest.save();
-
-  return res
+    return res
     .status(200)
-    .json(
-      new ApiResponse(200, { success: true }, "Payment received successfully")
-    );
+    .json(new ApiResponse(200, customer, "Profile updated successfully"))
 });
 
 export {
-  createOrder,
-  verifyPayment,
-  paymentReceivedByCash,
-  createOrderForWorker,
-  verifyPaymentForWorker,
-};
-
-
+    registerCustomer,
+    loginCustomer,
+    logoutCustomer,
+    refreshAccessToken,
+    changeCurrentPassword,
+    getCurrentCustomer,
+    updateProfilePhoto,
+    updateCustomerDetails
+}
