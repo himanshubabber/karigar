@@ -25,6 +25,7 @@ import { CustomerProvider } from './Context/Customer_context.jsx';
 import { ServiceReqProvider } from './Context/Service_req_context.jsx';
 import { OtpProvider } from './Context/Otp_context.jsx';
 import { WorkerProvider } from './Context/Worker_context.jsx';
+import Edit_customer from './components/customer/Edit_customer.jsx';
 
 
 
@@ -74,6 +75,10 @@ const router = createBrowserRouter([
   {
     path:"/edit_worker",
     element:<Edit_worker/>
+  },
+  {
+    path:"/edit_customer",
+    element:<Edit_customer/>
   }
 ]);
 

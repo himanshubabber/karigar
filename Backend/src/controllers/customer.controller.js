@@ -2,345 +2,232 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { Customer } from "../models/customer.model.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { Otp } from "../models/otp.model.js";
 import jwt from "jsonwebtoken";
 
-const generateAccessAndRefreshTokens = async(customerId)=>{
-    try {
-        const customer = await Customer.findById(customerId);
-        const accessToken = customer.generateAccessToken();
-        const refreshToken = customer.generateRefreshToken();
-        customer.refreshToken = refreshToken;
-        await customer.save({validateBeforeSave: false});
-        return { accessToken, refreshToken };
-    } catch (error) {
-        throw new ApiError(500, "Failed to generate tokens");
-    }
-}
+const generateAccessAndRefreshTokens = async (customerId) => {
+  try {
+    const customer = await Customer.findById(customerId);
+    const accessToken = customer.generateAccessToken();
+    const refreshToken = customer.generateRefreshToken();
+    customer.refreshToken = refreshToken;
+    await customer.save({ validateBeforeSave: false });
+    return { accessToken, refreshToken };
+  } catch (error) {
+    throw new ApiError(500, "Failed to generate tokens");
+  }
+};
 
 const registerCustomer = asyncHandler(async (req, res) => {
+  const { fullName, email, password, phone, address } = req.body;
 
-    const { fullName, email, password, phone, address } = req.body;
+  if (!fullName || !email || !password || !phone || !address) {
+    throw new ApiError(400, "All fields are required");
+  }
 
-    if (!fullName || !email || !password || !phone || !address) {
-        throw new ApiError(400, "All fields are required");
-    }
+  const existingCustomer = await Customer.findOne({ email });
+  if (existingCustomer) {
+    throw new ApiError(400, "Customer with this email already exists");
+  }
 
-    const existingCustomer = await Customer.findOne({ email });
-    if (existingCustomer) {
-        throw new ApiError(400, "Customer with this email already exists");
-    }
+  const profilePhoto = req.file ? `/temp/${req.file.filename}` : "";
 
-    const profilePhotoLocalPath = req.file?.path
+  const customer = await Customer.create({
+    fullName,
+    email,
+    password,
+    phone,
+    address,
+    profilePhoto,
+  });
 
-    let profilePhoto;
-    if(profilePhotoLocalPath){
-        profilePhoto = await uploadOnCloudinary(profilePhotoLocalPath);
-    }
+  const createdCustomer = await Customer.findById(customer._id).select("-password -refreshToken");
 
-    const customer = await Customer.create({
-        fullName,
-        email,
-        password,
-        phone,
-        address,
-        profilePhoto: profilePhoto?.url || ""
-    })
+  if (!createdCustomer) {
+    throw new ApiError(500, "Customer creation failed");
+  }
 
-    const createdCustomer = await Customer.findById(customer._id).select("-password -refreshToken");
-
-    if (!createdCustomer) {
-        throw new ApiError(500, "Customer creation failed");
-    }
-
-    return res.status(201).json(
-        new ApiResponse(201,createdCustomer, "Customer registered successfully")
-    )
-})
+  return res.status(201).json(
+    new ApiResponse(201, createdCustomer, "Customer registered successfully")
+  );
+});
 
 const loginCustomer = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
 
-    const { email, password } = req.body;
-    if(!email){
-        throw new ApiError(400, "Email is required");
-    }
-    if(!password){
-        throw new ApiError(400, "Password is required");
-    }
+  if (!email || !password) {
+    throw new ApiError(400, "Email and Password are required");
+  }
 
-    const customer = await Customer.findOne({email})
+  const customer = await Customer.findOne({ email });
+  if (!customer) {
+    throw new ApiError(404, "User does not exist");
+  }
 
-    if(!customer){
-        throw new ApiError(404, "User does not exist");
-    }
+  const isPasswordCorrect = await customer.isPasswordCorrect(password);
+  if (!isPasswordCorrect) {
+    throw new ApiError(400, "Incorrect password");
+  }
 
-    const isPasswordCorrect = await customer.isPasswordCorrect(password);
-    if(!isPasswordCorrect){
-        throw new ApiError(400, "Incorrect password");
+  const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(customer._id);
+
+  const loggedInCustomer = await Customer.findById(customer._id).select("-password -refreshToken");
+
+  const options = { httpOnly: true, secure: true, sameSite: "None" };
+
+  return res
+    .cookie("refreshToken", refreshToken, options)
+    .cookie("accessToken", accessToken, options)
+    .status(200)
+    .json(
+      new ApiResponse(200, {
+        customer: loggedInCustomer,
+        accessToken,
+        refreshToken,
+      }, "Customer logged in successfully")
+    );
+});
+
+const logoutCustomer = asyncHandler(async (req, res) => {
+  await Customer.findByIdAndUpdate(req.customer._id, { $unset: { refreshToken: 1 } });
+
+  const options = { httpOnly: true, secure: true };
+
+  return res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, {}, "User logged Out"));
+});
+
+const refreshAccessToken = asyncHandler(async (req, res) => {
+  const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken;
+
+  if (!incomingRefreshToken) {
+    throw new ApiError(401, "Unauthorized request");
+  }
+
+  try {
+    const decoded = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
+    const customer = await Customer.findById(decoded?._id);
+
+    if (!customer || customer.refreshToken !== incomingRefreshToken) {
+      throw new ApiError(401, "Invalid or expired refresh token");
     }
 
     const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(customer._id);
 
-    const loggedInCustomer = await Customer.findById(customer._id).select("-password -refreshToken");
-
-    const options={
-        httpOnly: true,
-        secure: true,
-    }
+    const options = { httpOnly: true, secure: true };
 
     return res
-        .cookie("refreshToken", refreshToken, options)
-        .cookie("accessToken", accessToken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: "None",
-        }
-        )
-        .status(200)
-        .json(
-            new ApiResponse(
-                200,
-                {
-                    customer:loggedInCustomer,
-                    refreshToken,
-                    accessToken
-                }, 
-                "Customer logged in successfully"
-            )
-        )
-})
-
-const logoutCustomer = asyncHandler(async(req, res) => {
-    await Customer.findByIdAndUpdate(
-        req.customer._id,
-        {
-            $unset: {
-                refreshToken: 1 
-            }
-        },
-        {
-            new: true
-        }
-    )
-
-    const options = {
-        httpOnly: true,
-        secure: true
-    }
-
-    return res
-    .status(200)
-    .clearCookie("accessToken", options)
-    .clearCookie("refreshToken", options)
-    .json(new ApiResponse(200, {}, "User logged Out"))
-})
-
-const refreshAccessToken = asyncHandler(async (req, res) => {
-    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
-
-    if (!incomingRefreshToken) {
-        throw new ApiError(401, "Unauthorized request")
-    }
-
-    try {
-        const decodedToken = jwt.verify(
-            incomingRefreshToken,
-            process.env.REFRESH_TOKEN_SECRET
-        )
-    
-        const customer = await Customer.findById(decodedToken?._id)
-    
-        if (!customer) {
-            throw new ApiError(401, "Invalid refresh token")
-        }
-    
-        if (incomingRefreshToken !== customer?.refreshToken) {
-            throw new ApiError(401, "Refresh token is expired or used") //ud....................
-        }
-    
-        const options = {
-            httpOnly: true,
-            secure: true
-        }
-    
-        const {accessToken, refreshToken} = await generateAccessAndRefreshTokens(customer._id)
-    
-        return res
-        .status(200)
-        .cookie("accessToken", accessToken, options)
-        .cookie("refreshToken", refreshToken, options)
-        .json(
-            new ApiResponse(
-                200, 
-                {accessToken, refreshToken},
-                "Access token refreshed"
-            )
-        )
-    } catch (error) {
-        throw new ApiError(401, error?.message || "Invalid refresh token")
-    }
-
-})
-
-const changeCurrentPassword = asyncHandler(async(req, res) => {
-    const {oldPassword, newPassword} = req.body
-
-    
-
-    const customer = await Customer.findById(req.customer?._id)
-    const isPasswordCorrect = await customer.isPasswordCorrect(oldPassword)
-
-    if (!isPasswordCorrect) {
-        throw new ApiError(400, "Invalid old password")
-    }
-
-    customer.password = newPassword
-    await customer.save({validateBeforeSave: false})
-
-    return res
-    .status(200)
-    .json(new ApiResponse(200, {}, "Password changed successfully"))
-})
-
-const getCurrentCustomer= asyncHandler(async(req, res) => {
-    return res
-    .status(200)
-    .json(new ApiResponse(
-        200,
-        req.customer,
-        "User fetched successfully"
-    ))
-})
-
-const updateProfilePhoto= asyncHandler(async(req, res) => {
-    const profilePhotoLocalPath = req.file?.path
-
-    if (!profilePhotoLocalPath) {
-        throw new ApiError(400, "Profile Photo file is missing")
-    }
-
-    const profilePhoto = await uploadOnCloudinary(profilePhotoLocalPath)
-
-    if (!profilePhoto?.url) {
-        throw new ApiError(400, "Error while uploading Profile Photo")
-        
-    }
-
-    const customer = await Customer.findByIdAndUpdate(
-        req.customer?._id,
-        {
-            $set:{
-                profilePhoto: profilePhoto.url
-            }
-        },
-        {new: true}
-    ).select("-password -refreshToken")
-
-    return res
-    .status(200)
-    .json(
-        new ApiResponse(200, customer, "Profile Photo updated successfully")
-    )
-})
-
-const updateEmail = asyncHandler(async(req, res) => {
-    const {email} = req.body
-
-    if (!email) {
-        throw new ApiError(400, "Email is required")
-    }
-
-    const customer = await Customer.findByIdAndUpdate(
-        req.customer?._id,
-        {
-            $set: {
-                email: email
-            }
-        },
-        {new: true}
-        
-    ).select("-password -refreshToken");
-
-    return res
-    .status(200)
-    .json(new ApiResponse(200, customer, "Email updated successfully"))
+      .status(200)
+      .cookie("accessToken", accessToken, options)
+      .cookie("refreshToken", refreshToken, options)
+      .json(new ApiResponse(200, { accessToken, refreshToken }, "Access token refreshed"));
+  } catch (err) {
+    throw new ApiError(401, err?.message || "Invalid token");
+  }
 });
 
-const updatePhone = asyncHandler(async(req, res) => {
-    const {phone} = req.body
+const changeCurrentPassword = asyncHandler(async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
 
-    if (!phone) {
-        throw new ApiError(400, "Phone number is required")
-    }
+  const customer = await Customer.findById(req.customer?._id);
+  const isPasswordCorrect = await customer.isPasswordCorrect(oldPassword);
 
-    const customer = await Customer.findByIdAndUpdate(
-        req.customer?._id,
-        {
-            $set: {
-                phone: phone
-            }
-        },
-        {new: true}
-        
-    ).select("-password -refreshToken");
+  if (!isPasswordCorrect) {
+    throw new ApiError(400, "Invalid old password");
+  }
 
-    return res
-    .status(200)
-    .json(new ApiResponse(200, customer, "Phone number updated successfully"))
+  customer.password = newPassword;
+  await customer.save({ validateBeforeSave: false });
+
+  return res.status(200).json(new ApiResponse(200, {}, "Password changed successfully"));
 });
 
-const updateAddress = asyncHandler(async(req, res) => {
-    const {address} = req.body
-
-    if (!address) {
-        throw new ApiError(400, "Address is required")
-    }
-
-    const customer = await Customer.findByIdAndUpdate(
-        req.customer?._id,
-        {
-            $set: {
-                address: address
-            }
-        },
-        {new: true}
-        
-    ).select("-password -refreshToken");
-
-    return res
-    .status(200)
-    .json(new ApiResponse(200, customer, "Address updated successfully"))
+const getCurrentCustomer = asyncHandler(async (req, res) => {
+  return res.status(200).json(new ApiResponse(200, req.customer, "User fetched successfully"));
 });
 
-const updateFullName = asyncHandler(async(req, res) => {
-    const {fullName} = req.body
+const updateProfilePhoto = asyncHandler(async (req, res) => {
+  const customerId = req.customer?._id;
 
-    if (!fullName) {
-        throw new ApiError(400, "Full name is required")
-    }
+  if (!req.file) {
+    throw new ApiError(400, "Profile Photo file is missing");
+  }
 
-    const customer = await Customer.findByIdAndUpdate(
-        req.customer?._id,
-        {
-            $set: {
-                fullName: fullName
-            }
-        },
-        {new: true}
-        
-    ).select("-password -refreshToken");
+  const fullUrl = `${req.protocol}://${req.get("host")}/temp/${req.file.filename}`;
 
-    return res
-    .status(200)
-    .json(new ApiResponse(200, customer, "Full name updated successfully"))
+  const updatedCustomer = await Customer.findByIdAndUpdate(
+    customerId,
+    { profilePhoto: fullUrl },
+    { new: true }
+  ).select("-password -refreshToken");
+
+  if (!updatedCustomer) {
+    throw new ApiError(404, "Customer not found");
+  }
+
+  return res.status(200).json(
+    new ApiResponse(200, updatedCustomer, "Profile photo updated successfully")
+  );
 });
 
-export const generateotp=()=>{
-    return Math.floor(100000 + Math.random() * 900000).toString();
-}
+const updateEmail = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  if (!email) throw new ApiError(400, "Email is required");
 
+  const customer = await Customer.findByIdAndUpdate(
+    req.customer?._id,
+    { $set: { email } },
+    { new: true }
+  ).select("-password -refreshToken");
 
+  return res.status(200).json(new ApiResponse(200, customer, "Email updated successfully"));
+});
+
+const updatePhone = asyncHandler(async (req, res) => {
+  const { phone } = req.body;
+  if (!phone) throw new ApiError(400, "Phone is required");
+
+  const customer = await Customer.findByIdAndUpdate(
+    req.customer?._id,
+    { $set: { phone } },
+    { new: true }
+  ).select("-password -refreshToken");
+
+  return res.status(200).json(new ApiResponse(200, customer, "Phone updated successfully"));
+});
+
+const updateAddress = asyncHandler(async (req, res) => {
+  const { address } = req.body;
+  if (!address) throw new ApiError(400, "Address is required");
+
+  const customer = await Customer.findByIdAndUpdate(
+    req.customer?._id,
+    { $set: { address } },
+    { new: true }
+  ).select("-password -refreshToken");
+
+  return res.status(200).json(new ApiResponse(200, customer, "Address updated successfully"));
+});
+
+const updateFullName = asyncHandler(async (req, res) => {
+  const { fullName } = req.body;
+  if (!fullName) throw new ApiError(400, "Full name is required");
+
+  const customer = await Customer.findByIdAndUpdate(
+    req.customer?._id,
+    { $set: { fullName } },
+    { new: true }
+  ).select("-password -refreshToken");
+
+  return res.status(200).json(new ApiResponse(200, customer, "Full name updated successfully"));
+});
+
+const generateotp = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
 
 const generateOtpobj = asyncHandler(async (req, res) => {
   const { serviceRequestId } = req.body;
@@ -350,24 +237,13 @@ const generateOtpobj = asyncHandler(async (req, res) => {
   }
 
   const otp = generateotp();
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-  // Either update existing or create new OTP
   const updatedOtp = await Otp.findOneAndUpdate(
     { serviceRequestId },
-    {
-      otp,
-      expiresAt,
-      verified: false,
-    },
-    {
-      new: true,
-      upsert: true,
-      setDefaultsOnInsert: true,
-    }
+    { otp, expiresAt, verified: false },
+    { new: true, upsert: true, setDefaultsOnInsert: true }
   );
-
-  console.log("OTP sent to customer:", otp);
 
   return res.status(200).json({
     message: "OTP generated successfully",
@@ -375,20 +251,17 @@ const generateOtpobj = asyncHandler(async (req, res) => {
   });
 });
 
-
-
 export {
-    registerCustomer,
-    loginCustomer,
-    logoutCustomer,
-    refreshAccessToken,
-    changeCurrentPassword,
-    getCurrentCustomer,
-    updateProfilePhoto,
-    updateEmail,
-    updatePhone,
-    updateAddress,
-    updateFullName,
-    generateOtpobj,
-}
-
+  registerCustomer,
+  loginCustomer,
+  logoutCustomer,
+  refreshAccessToken,
+  changeCurrentPassword,
+  getCurrentCustomer,
+  updateProfilePhoto,
+  updateEmail,
+  updatePhone,
+  updateAddress,
+  updateFullName,
+  generateOtpobj,
+};

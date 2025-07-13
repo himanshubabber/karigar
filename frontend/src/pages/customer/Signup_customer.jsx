@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 const Signup_customer = () => {
   const navigate = useNavigate();
+
   const [form, setForm] = useState({
     fullName: "",
     email: "",
@@ -12,6 +13,9 @@ const Signup_customer = () => {
     password: "",
   });
 
+  const [profilePhoto, setProfilePhoto] = useState(null);
+  const [previewPhoto, setPreviewPhoto] = useState(null);
+
   const handleChange = (e) => {
     setForm((prev) => ({
       ...prev,
@@ -19,21 +23,42 @@ const Signup_customer = () => {
     }));
   };
 
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setProfilePhoto(file);
+      setPreviewPhoto(URL.createObjectURL(file));
+    }
+  };
+
   const handleSignup = async (e) => {
     e.preventDefault();
     const { fullName, email, phone, address, password } = form;
 
     if (!fullName || !email || !phone || !address || password.length < 8) {
-      alert("Please fill all fields correctly.");
+      alert("Please fill all fields correctly. Password must be at least 8 characters.");
       return;
     }
 
     try {
-      const res = await axios.post("/api/v1/customer/register", form, {
-        withCredentials: true,
+      const formData = new FormData();
+      Object.keys(form).forEach((key) => {
+        formData.append(key, form[key]);
       });
+
+      if (profilePhoto) {
+        formData.append("profilePhoto", profilePhoto);
+      }
+
+      const res = await axios.post("/api/v1/customer/register", formData, {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
       alert("Signup successful!");
-      console.log(res.data);
+      console.log("Registered customer:", res.data);
       navigate("/signin_customer");
     } catch (err) {
       console.error(err);
@@ -43,12 +68,12 @@ const Signup_customer = () => {
 
   return (
     <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
-      <div className="card shadow" style={{ width: "26rem" }}>
+      <div className="card shadow" style={{ width: "28rem" }}>
         <div className="card-body">
           <h4 className="text-center mb-4">Customer Signup</h4>
-          <form onSubmit={handleSignup}>
-            {["fullName", "email", "phone", "address", "password"].map((field, idx) => (
-              <div className="mb-3" key={idx}>
+          <form onSubmit={handleSignup} encType="multipart/form-data">
+            {["fullName", "email", "phone", "address", "password"].map((field) => (
+              <div className="mb-3" key={field}>
                 <label className="form-label">
                   {field.charAt(0).toUpperCase() + field.slice(1)}
                 </label>
@@ -58,15 +83,37 @@ const Signup_customer = () => {
                   name={field}
                   value={form[field]}
                   onChange={handleChange}
-                  placeholder={
-                    field === "password"
-                      ? "At least 8 characters"
-                      : `Enter ${field}`
-                  }
+                  placeholder={field === "password" ? "At least 8 characters" : `Enter ${field}`}
+                  required
                 />
               </div>
             ))}
-            <button type="submit" className="btn btn-primary w-100">
+
+            {/* Profile Photo Upload */}
+            <div className="mb-3">
+              <label className="form-label">Profile Photo (optional)</label>
+              <input
+                type="file"
+                accept="image/*"
+                className="form-control"
+                onChange={handlePhotoChange}
+              />
+              {previewPhoto && (
+                <div className="text-center mt-3">
+                  <img
+                    src={previewPhoto}
+                    alt="Preview"
+                    className="rounded-circle shadow"
+                    style={{ width: "100px", height: "100px", objectFit: "cover" }}
+                  />
+                  <p className="text-muted mt-1" style={{ fontSize: "0.85rem" }}>
+                    Preview
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <button type="submit" className="btn btn-primary w-100 mt-3">
               Sign Up
             </button>
           </form>
