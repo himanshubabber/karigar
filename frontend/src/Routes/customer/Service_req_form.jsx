@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { Navigate, useNavigate } from "react-router-dom";
-import { useServiceReq } from "../Context/Service_req_context";
-import {useOtp} from "../Context/Otp_context.jsx"
+import { useServiceReq } from "../../Context/Service_req_context.jsx";
+import {useOtp} from "../../Context/Otp_context.jsx"
 
 const categories = [
   "plumber", "electrician", "carpenter", "painter",

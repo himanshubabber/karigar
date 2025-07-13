@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import axios from "axios";
 import Request from "./Request";
-import { useServiceReq } from "../Context/Service_req_context.jsx";
+import { useServiceReq } from "../../Context/Service_req_context";
 
 const Requests = () => {
   const { serviceReqs, updateAllRequests } = useServiceReq();

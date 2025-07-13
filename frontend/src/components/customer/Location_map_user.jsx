@@ -26,10 +26,10 @@ import { AiTwotoneAudio } from "react-icons/ai";
 import { useNavigate } from "react-router-dom";
 const destination = [28.682356, 77.064675];
 
-import { useServiceReq } from "../Context/Service_req_context.jsx";
-import { useCustomer } from "../Context/Customer_context.jsx";
-import { useWorker } from "../Context/Worker_context.jsx";
-import { useOtp } from "../Context/Otp_context.jsx";
+import { useServiceReq } from "../../Context/Service_req_context.jsx";
+import { useCustomer } from "../../Context/Customer_context.jsx";
+import { useWorker } from "../../Context/Worker_context.jsx";
+import { useOtp } from "../../Context/Otp_context.jsx";
 import axios from "axios"
 
 const sourceIcon = L.icon({

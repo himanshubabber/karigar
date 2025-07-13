@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import Header_worker from "../components/Header_worker";
-import Worker_middle from "../components/Worker_middle";
-import Footer from "../components/Footer";
+import Header_worker from "../../components/worker/Header_worker.jsx";
+import Worker_middle from "../../components/worker/Worker_middle.jsx";
+import Footer from "../../components/general/Footer.jsx";
 import { useLocation } from "react-router-dom";
-import { useWorker } from "../Context/Worker_context";
+import { useWorker } from "../../Context/Worker_context";
 
 const Worker = () => {
   const location = useLocation();

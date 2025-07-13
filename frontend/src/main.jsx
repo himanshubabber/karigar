@@ -4,20 +4,25 @@ import { createRoot } from 'react-dom/client'
 import { RouterProvider, createBrowserRouter } from   "react-router-dom"; 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
-import Signin from './pages/Signin.jsx';
-import Signup_customer from './pages/Signup_customer.jsx';
-import Signup_worker from './pages/Signup_worker.jsx';
+
+import Signin from './pages/worker/Signin.jsx';
+import Signup_customer from './pages/customer/Signup_customer.jsx';
+import Signup_worker from './pages/worker/Signup_worker.jsx';
+
+// landing page route have separate file in routes folder
 import Landing_page from './Routes/Landing_page.jsx';
-import Service_req_form from './Routes/Service_req_form.jsx';
-import Customer from './Routes/Customer.jsx'
-import Worker from './Routes/Worker.jsx';
-import All_requests from './Routes/All_requests.jsx';
-import Location_workerside from './Routes/Location_workerside.jsx';
-import Location_userside from './Routes/Location_userside.jsx';
-import Edit_worker from './components/Edit_worker.jsx';
+
+import Service_req_form from './Routes/customer/Service_req_form.jsx';
+import Customer from './Routes/customer/Customer.jsx'
+import Worker from './Routes/worker/Worker.jsx';
+import All_requests from './Routes/worker/All_requests.jsx';
+import Location_workerside from './Routes/worker/Location_workerside.jsx';
+import Location_userside from './Routes/customer/Location_userside.jsx';
+import Edit_worker from './components/worker/Edit_worker.jsx';
+import Signin_customer from './pages/customer/Signin_customer.jsx';
+
 import { CustomerProvider } from './Context/Customer_context.jsx';
 import { ServiceReqProvider } from './Context/Service_req_context.jsx';
-import Signin_customer from './pages/Signin_customer.jsx';
 import { OtpProvider } from './Context/Otp_context.jsx';
 import { WorkerProvider } from './Context/Worker_context.jsx';
 

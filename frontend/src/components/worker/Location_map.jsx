@@ -25,9 +25,9 @@ import { TiPin } from "react-icons/ti";
 import { MdOutlineDirectionsRun } from "react-icons/md";
 import { FiMapPin } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
-import { useServiceReq } from "../Context/Service_req_context.jsx";
+import { useServiceReq } from "../../Context/Service_req_context.jsx";
 import axios from "axios";
-import Otp_timer from "./Otp_timer.jsx";
+import Otp_timer from "../general/Otp_timer.jsx";
 
 
 

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useServiceReq } from "../Context/Service_req_context.jsx";
+import { useServiceReq } from "../../Context/Service_req_context";
 import axios from "axios"
 
 const Request = ({ request }) => {
