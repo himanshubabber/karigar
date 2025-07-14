@@ -31,8 +31,6 @@ import { useWorker } from "../../Context/Worker_context.jsx";
 import { useOtp } from "../../Context/Otp_context.jsx";
 import axios from "axios";
 
-const destination = [28.682356, 77.064675];
-
 const sourceIcon = L.icon({
   iconUrl: "https://cdn-icons-png.flaticon.com/512/2202/2202112.png",
   iconSize: [40, 40],
@@ -47,42 +45,18 @@ const manIcon = L.icon({
   popupAnchor: [0, -30],
 });
 
-function Routing({ from }) {
-  const map = useMap();
-  useEffect(() => {
-    if (!from) return;
-    const control = L.Routing.control({
-      waypoints: [L.latLng(from), L.latLng(destination)],
-      lineOptions: { styles: [{ color: "blue", weight: 5 }] },
-      show: false,
-      addWaypoints: false,
-      draggableWaypoints: false,
-      fitSelectedRoutes: true,
-      createMarker: () => null,
-    }).addTo(map);
-    return () => map.removeControl(control);
-  }, [from, map]);
-  return null;
-}
-
 const Location_map_user = () => {
   const { customer, setCustomer } = useCustomer();
   const { worker, setWorker } = useWorker();
   const { otpData: otp } = useOtp();
   const { selectedReq: ser, updateSelectedReq } = useServiceReq();
-  console.log(ser);
+
   const [otpShow, setOtpShow] = useState(false);
   const [userPosition, setUserPosition] = useState(null);
   const [showCancelOptions, setShowCancelOptions] = useState(false);
   const [track, setTrack] = useState(false);
 
-  
   const serviceRequestId = ser?._id || localStorage.getItem("serviceRequestId");
-   
-  const [requestData, setRequestData] = useState(null); // ✅ Define state here
-
- 
-
 
   useEffect(() => {
     if (serviceRequestId) {
@@ -95,10 +69,11 @@ const Location_map_user = () => {
             worker: fetchedWorker,
             serviceRequest: fetchedServiceReq,
           } = resData || {};
-          console.log(fetchedWorker)
+
           setCustomer(fetchedCustomer || null);
           setWorker(fetchedWorker || null);
           updateSelectedReq(fetchedServiceReq || null);
+
           if (fetchedServiceReq?._id) {
             localStorage.setItem("serviceRequestId", fetchedServiceReq._id);
             localStorage.setItem("selectedReq", JSON.stringify(fetchedServiceReq));
@@ -128,7 +103,6 @@ const Location_map_user = () => {
     };
   }, [track]);
 
-  const mapCenter = userPosition || [28.6139, 77.209];
   const navigate = useNavigate();
 
   const handle_notproceed = () => {
@@ -200,100 +174,133 @@ const Location_map_user = () => {
     }
   };
 
-  console.log(ser);
-
   const workerCoords = worker?.workerLocation?.coordinates?.length === 2
-  ? [worker.workerLocation.coordinates[1], worker.workerLocation.coordinates[0]]  // lat, lng
-  : null;
+    ? [worker.workerLocation.coordinates[1], worker.workerLocation.coordinates[0]]
+    : null;
 
-  const destination = workerCoords || [28.6139, 77.209]; // fallback
+  const destination = workerCoords;
+
+  useEffect(() => {
+    if (!userPosition && customer?.workerLocation?.coordinates?.length === 2) {
+      setUserPosition([
+        customer.workerLocation.coordinates[1],
+        customer.workerLocation.coordinates[0],
+      ]);
+    }
+  }, [customer, userPosition]);
+
+  function Routing({ from }) {
+    const map = useMap();
+    useEffect(() => {
+      if (!from) return;
+      const control = L.Routing.control({
+        waypoints: [L.latLng(from), L.latLng(destination)],
+        lineOptions: { styles: [{ color: "blue", weight: 5 }] },
+        show: false,
+        addWaypoints: false,
+        draggableWaypoints: false,
+        fitSelectedRoutes: true,
+        createMarker: () => null,
+      }).addTo(map);
+      return () => map.removeControl(control);
+    }, [from, map]);
+    return null;
+  }
+
+  const mapCenter = userPosition || [28.6139, 77.209];
 
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "20px" }}>
       <div style={{ width: "80%", maxWidth: "1200px" }}>
         <div style={{ width: "100%", marginBottom: "20px" }}>
-
-       {destination && userPosition ? (
-  <MapContainer
-    center={userPosition}
-    zoom={13}
-    style={{
-      height: "500px",
-      width: "100%",
-      borderRadius: "12px",
-      boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-    }}
-  >
-    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-
-    {/* Worker Location Marker */}
-    <Marker position={destination} icon={manIcon}>
-      <Popup>👷 Worker Location</Popup>
-    </Marker>
-
-    {/* User (Customer) Location Marker */}
-    <Marker position={userPosition} icon={sourceIcon}>
-      <Popup>📍 Your Location</Popup>
-    </Marker>
-
-    <Routing from={userPosition} />
-  </MapContainer>
-) : (
-  <div className="alert alert-warning text-center p-3 rounded">
-    Worker location is unavailable.
-  </div>
-)}
-        </div>
-
-        <div className="card p-4 mb-4">
-          <h4>Request Info</h4>
-          <p><CgProfile /> <b>Name:</b> {customer?.fullName || "N/A"}</p>
-          <p><FaHammer /> <b>Category:</b> {ser?.category || "N/A"}</p>
-          <p><MdOutlineDescription /> <b>Description:</b> {ser?.description || "N/A"}</p>
-          <p><MdNetworkWifi /> <b>Job Status:</b> {ser?.jobStatus || "N/A"}</p>
-          <p><RiMoneyDollarCircleFill /> <b>Payment:</b> {ser?.paymentStatus || "N/A"}</p>
-          <p><AiTwotoneAudio /> <b>Audio Note:</b></p>
-          {ser?.audioNoteUrl ? (
-            <audio controls src={ser.audioNoteUrl} className="w-100 mt-2" />
+          {destination && userPosition ? (
+            <MapContainer
+              center={userPosition}
+              zoom={13}
+              style={{
+                height: "500px",
+                width: "100%",
+                borderRadius: "12px",
+                boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+              }}
+            >
+              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              <Marker position={destination} icon={manIcon}>
+                <Popup>👷 Worker Location</Popup>
+              </Marker>
+              <Marker position={userPosition} icon={sourceIcon}>
+                <Popup>📍 Your Location</Popup>
+              </Marker>
+              <Routing from={userPosition} />
+            </MapContainer>
           ) : (
-            <p className="text-muted">No audio note provided.</p>
-          )}
-        </div>
-
-        <div className="mb-4 text-center">
-          <h5>Visiting Charge: ₹59</h5>
-          <button className="btn btn-primary mb-2" onClick={handlePayment}>Pay to Start</button>
-          {otpShow && <h4>OTP: {otp?.otp || "N/A"}</h4>}
-
-          {!showCancelOptions ? (
-            <button className="btn btn-danger mt-3" onClick={() => setShowCancelOptions(true)}>
-              Cancel
-            </button>
-          ) : (
-            <div className="d-flex flex-column gap-2 mt-2">
-              <button className="btn btn-warning" onClick={handle_notproceed}>Don't want to proceed</button>
-              <button className="btn btn-secondary">Worker not responding</button>
+            <div className="alert alert-warning text-center p-3 rounded">
+              Worker location is unavailable.
             </div>
           )}
         </div>
 
-        <div className="card p-4">
-          <h4>Worker Info</h4>
-          <p><CgProfile /> <b>Name:</b> {worker?.fullName|| "N/A"}</p>
-          <p><FaStar /> <b>Rating:</b> {worker?.rating || "N/A"}</p>
-          <p><MdOutlineAccessTimeFilled /> <b>Experience:</b> {worker?.yearOfExperience || "N/A"} yrs</p>
-          <p><MdVerifiedUser /> <b>Verified:</b> {worker?.isVerified ? "✅ Yes" : "❌ No"}</p>
-          <p><b>Status:</b> {worker?.isOnline ? "🟢 Online" : "🔴 Offline"}</p>
-          <div className="d-flex flex-wrap gap-2 mt-2">
-            {worker?.workingCategory?.map((cat, idx) => (
-              <span
-                key={idx}
-                className="badge bg-primary text-light"
-                style={{ textTransform: "capitalize", fontSize: "1.1rem", padding: "0.5rem 1rem", borderRadius: "14px", fontWeight: "600" }}
-              >
-                {cat}
-              </span>
-            ))}
+        {/* 👇 FLEX WRAPPER FOR 3 CARDS */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", justifyContent: "space-between" }}>
+          {/* Request Info */}
+          <div className="card p-4" style={{ flex: "1", minWidth: "280px" }}>
+            <h4>Request Info</h4>
+            <p><CgProfile /> <b>Name:</b> {customer?.fullName || "N/A"}</p>
+            <p><FaHammer /> <b>Category:</b> {ser?.category || "N/A"}</p>
+            <p><MdOutlineDescription /> <b>Description:</b> {ser?.description || "N/A"}</p>
+            <p><MdNetworkWifi /> <b>Job Status:</b> {ser?.jobStatus || "N/A"}</p>
+            <p><RiMoneyDollarCircleFill /> <b>Payment:</b> {ser?.paymentStatus || "N/A"}</p>
+            <p><AiTwotoneAudio /> <b>Audio Note:</b></p>
+            {ser?.audioNoteUrl ? (
+              <audio controls src={ser.audioNoteUrl} className="w-100 mt-2" />
+            ) : (
+              <p className="text-muted">No audio note provided.</p>
+            )}
+          </div>
+
+          {/* Cancel & Payment */}
+          <div className="card p-4 text-center" style={{ flex: "1", minWidth: "280px" }}>
+            <h5>Visiting Charge: ₹59</h5>
+            <button className="btn btn-primary mb-2" onClick={handlePayment}>Pay to Start</button>
+            {otpShow && <h4>OTP: {otp?.otp || "N/A"}</h4>}
+            <div>{otp?.otp}</div>
+            {!showCancelOptions ? (
+              <button className="btn btn-danger mt-3" onClick={() => setShowCancelOptions(true)}>
+                Cancel
+              </button>
+            ) : (
+              <div className="d-flex flex-column gap-2 mt-2">
+                <button className="btn btn-warning" onClick={handle_notproceed}>Don't want to proceed</button>
+                <button className="btn btn-secondary">Worker not responding</button>
+              </div>
+            )}
+          </div>
+
+          {/* Worker Info */}
+          <div className="card p-4" style={{ flex: "1", minWidth: "280px" }}>
+            <h4>Worker Info</h4>
+            <p><CgProfile /> <b>Name:</b> {worker?.fullName || "N/A"}</p>
+            <p><FaStar /> <b>Rating:</b> {worker?.rating || "N/A"}</p>
+            <p><MdOutlineAccessTimeFilled /> <b>Experience:</b> {worker?.yearOfExperience || "N/A"} yrs</p>
+            <p><MdVerifiedUser /> <b>Verified:</b> {worker?.isVerified ? "✅ Yes" : "❌ No"}</p>
+            <p><b>Status:</b> {worker?.isOnline ? "🟢 Online" : "🔴 Offline"}</p>
+            <div className="d-flex flex-wrap gap-2 mt-2">
+              {worker?.workingCategory?.map((cat, idx) => (
+                <span
+                  key={idx}
+                  className="badge bg-primary text-light"
+                  style={{
+                    textTransform: "capitalize",
+                    fontSize: "1.1rem",
+                    padding: "0.5rem 1rem",
+                    borderRadius: "14px",
+                    fontWeight: "600",
+                  }}
+                >
+                  {cat}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
       </div>

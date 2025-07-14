@@ -387,17 +387,18 @@ const updateWorkerLocation = asyncHandler(async (req, res) => {
     if (!coordinates || coordinates.length !== 2) {
       throw new ApiError(400, "Coordinates [lng, lat] are required");
     }
-  
+    
     const updatedWorker = await Worker.findByIdAndUpdate(
       workerId,
       {
-        location: {
+        workerLocation: {
           type: "Point",
           coordinates,
         },
       },
       { new: true }
     );
+    console.log(updatedWorker)
   
     if (!updatedWorker) {
       throw new ApiError(404, "Worker not found");

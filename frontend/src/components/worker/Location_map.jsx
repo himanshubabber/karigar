@@ -168,6 +168,31 @@ const Location_map = () => {
     }
   };
 
+  useEffect(() => {
+      const watchId = navigator.geolocation.watchPosition(
+        async (pos) => {
+          const { latitude, longitude } = pos.coords;
+          console.log(pos);
+          try {
+            await axios.post("/api/v1/worker/update-location", {
+              coordinates: [longitude, latitude],
+            },
+            { withCredentials: true },
+          );
+          } catch (err) {
+            console.error("Location update failed", err);
+          }
+        },
+        (err) => {
+          console.error("Location error:", err);
+        },
+        { enableHighAccuracy: true }
+      );
+  
+      return () => navigator.geolocation.clearWatch(watchId);
+  });
+
+
   
 
   return (
