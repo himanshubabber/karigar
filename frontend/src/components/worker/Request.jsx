@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useServiceReq } from "../../Context/Service_req_context";
-import axios from "axios"
+import axios from "axios";
 
 const Request = ({ request }) => {
   const navigate = useNavigate();
@@ -26,22 +26,39 @@ const Request = ({ request }) => {
       alert("Geolocation not supported by your browser");
       return;
     }
-  
+
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
         console.log("Captured worker location:", [longitude, latitude]);
         try {
-          const res = await axios.post(
+          // Accept the request
+          await axios.post(
             "/api/v1/serviceRequest/accept",
-            {
+            { 
               serviceRequestId: _id,
               coordinates: [longitude, latitude],
             },
             { withCredentials: true }
           );
-  
-          updateSelectedReq(res.data.data);
+
+          // Fetch full service request details
+          const fullDetails = await axios.post(
+            "/api/v1/serviceRequest/get-service-details",
+            { serviceRequestId: _id },
+            { withCredentials: true }
+          );
+
+          const fetchedRequest = fullDetails?.data?.data?.serviceRequest;
+          console.log(fetchedRequest)
+
+          // Save in context
+          updateSelectedReq(fetchedRequest);
+
+          // Save in local storage
+          localStorage.setItem("serviceRequestId", _id);
+          localStorage.setItem("serviceRequestData", JSON.stringify(fetchedRequest));
+
           setAccepted(true);
           navigate("/location_worker");
         } catch (err) {
@@ -58,7 +75,7 @@ const Request = ({ request }) => {
 
   return (
     <div className="card shadow-sm mb-4 p-3" style={{ borderRadius: "12px" }}>
-      <h5 className="fw-bold text-capitalize mb-2">{category}</h5>
+      <h5 className="fw-bold text-capitalize mb-2">{category.toLowerCase()}</h5>
 
       <p><strong>Customer:</strong> {customerId?.fullName || "Unknown"}</p>
       <p><strong>Location:</strong> {customerLocation?.coordinates?.join(", ")}</p>

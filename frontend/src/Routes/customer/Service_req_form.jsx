@@ -9,10 +9,7 @@ const categories = [
   "tv", "fridge", "ac", "washing machine", "laptop"
 ];
 
-const toTitleCase = (str) =>
-  str
-    .split(" ")
-    .join(" ");
+const toTitleCase = (str) => str.split(" ").join(" ");
 
 const Service_req_form = () => {
   const { storeOtp } = useOtp();
@@ -73,9 +70,9 @@ const Service_req_form = () => {
       recorder.onstop = () => {
         const blob = new Blob(chunks, { type: "audio/webm" });
         setAudioBlob(blob);
-        stream.getTracks().forEach((track) => track.stop()); // 🔑 Stop mic
+        stream.getTracks().forEach((track) => track.stop());
         clearInterval(recordingIntervalRef.current);
-        setFinalDuration((prev) => prev); // lock the duration
+        setFinalDuration((prev) => prev);
       };
 
       recorder.start();
@@ -122,7 +119,7 @@ const Service_req_form = () => {
       if (audioBlob) {
         const audioFormData = new FormData();
         audioFormData.append("file", audioBlob);
-        audioFormData.append("upload_preset","ml_default");
+        audioFormData.append("upload_preset", "ml_default");
 
         const uploadRes = await axios.post(
           `https://api.cloudinary.com/v1_1/dqzymzibc/auto/upload`,
@@ -146,9 +143,14 @@ const Service_req_form = () => {
       );
 
       const serviceRequestData = res.data?.data;
-      updateSelectedReq(serviceRequestData);
       const serviceRequestId = serviceRequestData?._id;
       if (!serviceRequestId) throw new Error("No service ID returned");
+
+      updateSelectedReq(serviceRequestData);
+
+      // ✅ Save to localStorage
+      localStorage.setItem("selectedReq", JSON.stringify(serviceRequestData));
+      localStorage.setItem("serviceRequestId", serviceRequestId);
 
       const otpRes = await axios.post(
         "/api/v1/customer/generate-otp",

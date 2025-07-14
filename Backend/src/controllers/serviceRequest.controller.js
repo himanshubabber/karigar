@@ -13,6 +13,7 @@ import geolib from "geolib";
 const createServiceRequest = asyncHandler(async (req, res) => {
   const customerId = req.customer?._id;
   const { category, description, customerLocation, audioNoteUrl = "" } = req.body;
+ 
    console.log(category);
   if (!category) {
     throw new ApiError(400, "Service category is required");
@@ -92,49 +93,57 @@ const findRequests = asyncHandler(async (req, res) => {
     "_id customerId workerId category description audioNoteUrl orderStatus jobStatus customerLocation visitingCharge quoteAmount cancelledBy cancellationReason paymentStatus paymentType workerRated ratedWith workerReported searchExpiresAt createdAt"
   );
 
+
   return res.status(200).json(
     new ApiResponse(200, availableRequests, "All available service requests fetched")
   );
 });
 
 const acceptRequest = asyncHandler(async (req, res) => {
+  console.log(req);
   const workerId = req.worker?._id;
-  console.log(req.worker)
-  const { serviceRequestId,coordinates } = req.body;
+  console.log(workerId)
+  const { serviceRequestId, coordinates } = req.body;
 
-  // Find the service request
+  // Validate service request
   const serviceRequest = await ServiceRequest.findById(serviceRequestId);
   if (!serviceRequest) {
     throw new ApiError(404, "Service request not found");
   }
 
-  // Check if the request is already accepted or completed
+  // Check if already accepted or completed
   if (serviceRequest.workerId || serviceRequest.orderStatus !== "searching") {
     throw new ApiError(400, "Service request already accepted or completed");
   }
 
-  // Update the service request with worker details
+  // Assign worker details
   serviceRequest.workerId = workerId;
+  console.log( serviceRequest.workerId)
   serviceRequest.orderStatus = "connected";
-  serviceRequest.workerLocation={
+  serviceRequest.workerLocation = {
     type: "Point",
     coordinates,
-  }
+  };
   serviceRequest.connectedAt = new Date();
+
   await serviceRequest.save();
 
-  const updatedServiceRequest = await ServiceRequest.findById(serviceRequestId).select("_id customerId workerId category description customerLocation workerLocation orderStatus audioNoteUrl ");
+  // Populate customer and worker data for full frontend use
+  const populatedRequest = await ServiceRequest.findById(serviceRequestId)
+    .populate("customerId", "-password")
+    .populate("workerId", "-password");
 
-  if (!updatedServiceRequest) {
-    throw new ApiError(404, "Service request not found after accepting");
+  if (!populatedRequest) {
+    throw new ApiError(500, "Failed to retrieve updated request");
   }
 
   return res.status(200).json(
-    new ApiResponse(200, updatedServiceRequest, "Service request accepted successfully")
+    new ApiResponse(200, populatedRequest, "Service request accepted successfully")
   );
-})
+});
 
 const setQuoteAmount = asyncHandler(async (req, res) => {
+  
   const workerId = req.worker?._id;
   const { serviceRequestId } = req.params;
 
@@ -716,33 +725,33 @@ const reportWorker = asyncHandler(async (req, res) => {
   );
 })
 
- const getServiceRequestDetails = asyncHandler(async (req, res) => {
-  const { id } = req.body.serviceRequestId;
+const getServiceRequestDetails = asyncHandler(async (req, res) => {
+  const { serviceRequestId } = req.body;
 
-  const serviceRequest = await ServiceRequest.findById(id);
+  if (!serviceRequestId) {
+    throw new ApiError(400, "Service Request ID is required");
+  }
+
+  const serviceRequest = await ServiceRequest.findById(serviceRequestId)
+    .populate("customerId", "-password")
+    .populate("workerId", "-password");
+
   if (!serviceRequest) {
     throw new ApiError(404, "Service Request not found");
   }
 
-  const [customer, worker] = await Promise.all([
-    Customer.findById(serviceRequest.customerId).select("-password"), // Exclude sensitive info
-    Worker.findById(serviceRequest.workerId).select("-password"),
-  ]);
-
-  if (!customer || !worker) {
-    throw new ApiError(404, "Customer or Worker not found");
-  }
-
   return res.status(200).json(
-    new ApiResponse(200, {
-      serviceRequest,
-      customer,
-      worker,
-    }, "Service request with full details fetched")
+    new ApiResponse(
+      200,
+      {
+        serviceRequest,
+        customer: serviceRequest.customerId,
+        worker: serviceRequest.workerId,
+      },
+      "Service request with full details fetched"
+    )
   );
 });
-
-
 
 
 
