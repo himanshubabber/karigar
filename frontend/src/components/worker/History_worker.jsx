@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useCustomer } from "../../Context/Customer_context";
 import { useNavigate } from "react-router-dom";
+import { useWorker } from "../../Context/Worker_context";
 
-const History = () => {
-  const { customer } = useCustomer();
+const History_worker = () => {
+  const { worker } = useWorker();
   const navigate = useNavigate();
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchCustomerHistory = async () => {
+  const fetchWorkerHistory = async () => {
     try {
-      const { data } = await axios.get("/api/v1/customer/history", {
+      const { data } = await axios.get("/api/v1/worker/history", {
         withCredentials: true,
       });
       setHistory(data?.data || []);
@@ -23,14 +23,14 @@ const History = () => {
   };
 
   useEffect(() => {
-    fetchCustomerHistory();
+    fetchWorkerHistory();
   }, []);
 
   return (
     <div className="container my-5">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="fw-bold">Transaction History</h2>
-        <button className="btn btn-secondary" onClick={() => navigate("/customer")}>
+        <h2 className="fw-bold">Service History</h2>
+        <button className="btn btn-secondary" onClick={() => navigate("/worker")}>
           Back
         </button>
       </div>
@@ -38,7 +38,7 @@ const History = () => {
       {loading ? (
         <p>Loading...</p>
       ) : history.length === 0 ? (
-        <div className="alert alert-info text-center">No past transactions found.</div>
+        <div className="alert alert-info text-center">No service records found.</div>
       ) : (
         <div className="row g-4">
           {history.map((item, index) => (
@@ -52,9 +52,13 @@ const History = () => {
                   {item.visitingCharge && (
                     <p className="mb-1"><strong>Visiting Charge:</strong> ₹{item.visitingCharge}</p>
                   )}
-                  <p className="mb-1 text-muted"><strong>Requested On:</strong> {new Date(item.createdAt).toLocaleString()}</p>
+                  <p className="mb-1 text-muted">
+                    <strong>Requested On:</strong> {new Date(item.createdAt).toLocaleString()}
+                  </p>
                   {item.completedAt && (
-                    <p className="text-muted"><strong>Completed On:</strong> {new Date(item.completedAt).toLocaleString()}</p>
+                    <p className="text-muted">
+                      <strong>Completed On:</strong> {new Date(item.completedAt).toLocaleString()}
+                    </p>
                   )}
                 </div>
               </div>
@@ -66,4 +70,4 @@ const History = () => {
   );
 };
 
-export default History;
+export default History_worker;

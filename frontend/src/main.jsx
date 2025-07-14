@@ -26,7 +26,9 @@ import { ServiceReqProvider } from './Context/Service_req_context.jsx';
 import { OtpProvider } from './Context/Otp_context.jsx';
 import { WorkerProvider } from './Context/Worker_context.jsx';
 import Edit_customer from './components/customer/Edit_customer.jsx';
-import History from './components/customer/History.jsx';
+import History_customer from './components/customer/History_customer.jsx';
+import History_worker from './components/worker/History_worker.jsx';
+
 
 
 
@@ -82,8 +84,11 @@ const router = createBrowserRouter([
     element:<Edit_customer/>
   },
   {
-    path:"/history",
-    element:<History/>
+    path:"/history_customer",
+    element:<History_customer/>
+  },{
+    path:"/history_worker",
+    element:<History_worker/>
   }
 ]);
 

@@ -67,7 +67,7 @@ const Occupations = () => {
 
           <button
     className="btn btn-outline-primary fw-bold position-absolute bottom-0 end-0 m-3 fw-bold"
-    onClick={() => navigate("/history")}
+    onClick={() => navigate("/history_customer")}
     title="History"
   >
     History

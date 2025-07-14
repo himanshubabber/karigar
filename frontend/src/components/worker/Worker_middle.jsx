@@ -1,16 +1,36 @@
 import React from "react";
-import { MdOutlineEdit } from "react-icons/md";
-import { FaSackDollar } from "react-icons/fa6";
+import { MdOutlineEdit, MdVerifiedUser } from "react-icons/md";
+import { FaWallet, FaStar, FaCalendarAlt } from "react-icons/fa";
 import { IoIosInformationCircle } from "react-icons/io";
-import { FaStar, FaCalendarAlt } from "react-icons/fa";
-import { MdVerifiedUser } from "react-icons/md";
+import { FiLogOut } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const Worker_middle = ({ isOnline, setIsOnline, worker }) => {
   const navigate = useNavigate();
 
   const toggleOnlineStatus = () => {
     setIsOnline((prev) => !prev);
+  };
+
+  const handleLogout = async () => {
+    try {
+      const res = await axios.post("/api/v1/worker/logout", null, {
+        withCredentials: true,
+      });
+  
+      if (res.status === 200) {
+        localStorage.removeItem("token");
+        navigate("/signin");
+      } else {
+        alert(`Logout failed: ${res.statusText}`);
+      }
+    } catch (err) {
+      console.error("Logout error:", err);
+      alert(
+        err?.response?.data?.message || "An error occurred during logout."
+      );
+    }
   };
 
   if (!worker) {
@@ -26,7 +46,10 @@ const Worker_middle = ({ isOnline, setIsOnline, worker }) => {
       <div className="row align-items-stretch">
         {/* Left Card */}
         <div className="col-md-8 mb-3">
-          <div className="card p-4 shadow h-100 position-relative" style={{ borderRadius: "14px" }}>
+          <div
+            className="card p-4 shadow h-100 position-relative d-flex flex-column"
+            style={{ borderRadius: "14px" }}
+          >
             <div className="position-absolute top-0 end-0 p-3 d-flex flex-column align-items-end">
               <span
                 className={`badge ${isOnline ? "bg-success" : "bg-danger"} fs-5 px-3 py-2 rounded-pill`}
@@ -42,7 +65,7 @@ const Worker_middle = ({ isOnline, setIsOnline, worker }) => {
               />
             </div>
 
-            <div className="d-flex align-items-center mb-4">
+            <div className="d-flex align-items-center mb-3">
               <div
                 style={{
                   width: "130px",
@@ -70,41 +93,60 @@ const Worker_middle = ({ isOnline, setIsOnline, worker }) => {
               </div>
             </div>
 
-            <div>
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <h5 className="fw-bold fs-5">Working Categories:</h5>
-                <button
-                  onClick={toggleOnlineStatus}
-                  className="btn fw-bold"
+            {/* Working Categories and Go Online */}
+            <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+              <h5 className="fw-bold fs-5 mb-0">Working Categories:</h5>
+              <button
+                onClick={toggleOnlineStatus}
+                className="btn fw-bold"
+                style={{
+                  borderRadius: "20px",
+                  padding: "6px 16px",
+                  backgroundColor: isOnline ? "#dc3545" : "#198754",
+                  color: "#fff",
+                  border: `2px solid ${isOnline ? "#dc3545" : "#198754"}`,
+                }}
+              >
+                {isOnline ? "Go Offline" : "Go Online"}
+              </button>
+            </div>
+
+            {/* Categories */}
+            <div className="d-flex flex-wrap gap-2 mb-4">
+              {worker.workingCategory?.map((cat, idx) => (
+                <span
+                  key={idx}
+                  className="badge bg-primary text-light"
                   style={{
-                    borderRadius: "20px",
-                    padding: "6px 16px",
-                    backgroundColor: isOnline ? "#dc3545" : "#198754",
-                    color: "#fff",
-                    border: `2px solid ${isOnline ? "#dc3545" : "#198754"}`,
+                    textTransform: "capitalize",
+                    fontSize: "1.1rem",
+                    padding: "0.6rem 1.2rem",
+                    borderRadius: "14px",
+                    fontWeight: "600",
                   }}
                 >
-                  {isOnline ? "Go Offline" : "Go Online"}
-                </button>
-              </div>
+                  {cat}
+                </span>
+              ))}
+            </div>
 
-              <div className="d-flex flex-wrap gap-3 mb-3">
-                {worker.workingCategory?.map((cat, idx) => (
-                  <span
-                    key={idx}
-                    className="badge bg-primary text-light"
-                    style={{
-                      textTransform: "capitalize",
-                      fontSize: "1.1rem",
-                      padding: "0.7rem 1.3rem",
-                      borderRadius: "14px",
-                      fontWeight: "600",
-                    }}
-                  >
-                    {cat}
-                  </span>
-                ))}
-              </div>
+            {/* Logout & History (swapped positions) */}
+            <div className="d-flex justify-content-between align-items-center mt-auto">
+              <button
+                onClick={handleLogout}
+                className="btn btn-outline-danger fw-bold d-flex align-items-center"
+                style={{ borderRadius: "20px", padding: "6px 14px" }}
+              >
+                <FiLogOut className="me-2" size={18} />
+                Logout
+              </button>
+
+              <button
+                className="btn btn-outline-primary fw-bold"
+                onClick={() => navigate("/history_worker")}
+              >
+                History
+              </button>
             </div>
           </div>
         </div>
@@ -114,7 +156,7 @@ const Worker_middle = ({ isOnline, setIsOnline, worker }) => {
           <div className="card text-center shadow flex-fill" style={{ borderRadius: "14px" }}>
             <div className="card-body d-flex flex-column justify-content-center">
               <h4 className="fw-bold mb-3 fs-4">
-                <FaSackDollar size={26} className="me-2 text-black" /> Wallet
+                <FaWallet size={26} className="me-2 text-black" /> Wallet
               </h4>
               <p className="fs-2 fw-bold text-success mb-0">₹ {worker.walletBalance || 0}</p>
             </div>
