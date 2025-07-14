@@ -12,7 +12,6 @@ const categories = [
 const toTitleCase = (str) =>
   str
     .split(" ")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 
 const Service_req_form = () => {
@@ -123,10 +122,10 @@ const Service_req_form = () => {
       if (audioBlob) {
         const audioFormData = new FormData();
         audioFormData.append("file", audioBlob);
-        audioFormData.append("upload_preset", import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
+        audioFormData.append("upload_preset","ml_default");
 
         const uploadRes = await axios.post(
-          `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/auto/upload`,
+          `https://api.cloudinary.com/v1_1/dqzymzibc/auto/upload`,
           audioFormData
         );
         audioNoteUrlStr = uploadRes.data.secure_url;
