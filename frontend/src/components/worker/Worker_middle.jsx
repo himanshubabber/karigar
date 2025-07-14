@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { MdOutlineEdit, MdVerifiedUser } from "react-icons/md";
 import { FaWallet, FaStar, FaCalendarAlt } from "react-icons/fa";
 import { IoIosInformationCircle } from "react-icons/io";
@@ -12,6 +12,33 @@ const Worker_middle = ({ isOnline, setIsOnline, worker }) => {
   const toggleOnlineStatus = () => {
     setIsOnline((prev) => !prev);
   };
+
+  useEffect(() => {
+    if (isOnline) {
+      const watchId = navigator.geolocation.watchPosition(
+        async (pos) => {
+          const { latitude, longitude } = pos.coords;
+          console.log(pos);
+          try {
+            await axios.post("/api/v1/worker/update-location", {
+              coordinates: [longitude, latitude],
+            },
+            { withCredentials: true },
+          );
+          } catch (err) {
+            console.error("Location update failed", err);
+          }
+        },
+        (err) => {
+          console.error("Location error:", err);
+        },
+        { enableHighAccuracy: true }
+      );
+  
+      return () => navigator.geolocation.clearWatch(watchId);
+    }
+  }, [isOnline]);
+
 
   const handleLogout = async () => {
     try {

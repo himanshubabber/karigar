@@ -380,6 +380,33 @@ const updateFullName = asyncHandler(async(req, res) => {
     .json(new ApiResponse(200, worker, "Full name updated successfully"))
 });
 
+const updateWorkerLocation = asyncHandler(async (req, res) => {
+    const workerId = req.user?._id;
+    const { coordinates } = req.body;
+  
+    if (!coordinates || coordinates.length !== 2) {
+      throw new ApiError(400, "Coordinates [lng, lat] are required");
+    }
+  
+    const updatedWorker = await Worker.findByIdAndUpdate(
+      workerId,
+      {
+        location: {
+          type: "Point",
+          coordinates,
+        },
+      },
+      { new: true }
+    );
+  
+    if (!updatedWorker) {
+      throw new ApiError(404, "Worker not found");
+    }
+  
+    return res
+      .status(200)
+      .json(new ApiResponse(200, updatedWorker, "Location updated successfully"));
+  });
 
  const verifyOtpForService = async (req, res) => {
     const { serviceRequestId, otp } = req.body;
@@ -426,5 +453,6 @@ export{
     updatePhone,
     updateAddress,
     updateFullName,
+    updateWorkerLocation,
     verifyOtpForService,
 }

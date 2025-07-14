@@ -202,30 +202,47 @@ const Location_map_user = () => {
 
   console.log(ser);
 
+  const workerCoords = worker?.workerLocation?.coordinates?.length === 2
+  ? [worker.workerLocation.coordinates[1], worker.workerLocation.coordinates[0]]  // lat, lng
+  : null;
+
+  const destination = workerCoords || [28.6139, 77.209]; // fallback
+
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "20px" }}>
       <div style={{ width: "80%", maxWidth: "1200px" }}>
         <div style={{ width: "100%", marginBottom: "20px" }}>
-          {ser?.worker?._id && userPosition ? (
-            <MapContainer
-              center={mapCenter}
-              zoom={13}
-              style={{ height: "500px", width: "100%", borderRadius: "12px", boxShadow: "0 4px 10px rgba(0,0,0,0.1)" }}
-            >
-              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-              <Marker position={destination} icon={manIcon}>
-                <Popup>📍 Customer Location</Popup>
-              </Marker>
-              <Marker position={userPosition} icon={sourceIcon}>
-                <Popup>👷‍♂️ Your Current Location</Popup>
-              </Marker>
-              <Routing from={userPosition} />
-            </MapContainer>
-          ) : (
-            <div className="alert alert-warning text-center p-3 rounded">
-              Worker location is unavailable.
-            </div>
-          )}
+
+       {destination && userPosition ? (
+  <MapContainer
+    center={userPosition}
+    zoom={13}
+    style={{
+      height: "500px",
+      width: "100%",
+      borderRadius: "12px",
+      boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+    }}
+  >
+    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+
+    {/* Worker Location Marker */}
+    <Marker position={destination} icon={manIcon}>
+      <Popup>👷 Worker Location</Popup>
+    </Marker>
+
+    {/* User (Customer) Location Marker */}
+    <Marker position={userPosition} icon={sourceIcon}>
+      <Popup>📍 Your Location</Popup>
+    </Marker>
+
+    <Routing from={userPosition} />
+  </MapContainer>
+) : (
+  <div className="alert alert-warning text-center p-3 rounded">
+    Worker location is unavailable.
+  </div>
+)}
         </div>
 
         <div className="card p-4 mb-4">

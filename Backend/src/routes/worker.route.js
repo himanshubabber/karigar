@@ -12,6 +12,7 @@ import {
     updatePhone,
     updateAddress,
     updateFullName,
+    updateWorkerLocation,
     verifyOtpForService,
 } from "../controllers/worker.controller.js";
 import {upload} from "../middlewares/multer.middleware.js"
@@ -33,6 +34,7 @@ router.route("/update-email").patch(verifyJWT, updateEmail)
 router.route("/update-phone").patch(verifyJWT, updatePhone)
 router.route("/update-address").patch(verifyJWT, updateAddress)
 router.route("/update-fullName").patch(verifyJWT, updateFullName)
+router.route("/update-location").post(verifyJWT, updateWorkerLocation);
 router.route("/verify-otp").post(verifyJWT, verifyOtpForService);
 
 export default router
