@@ -53,13 +53,13 @@ const workerSchema = new mongoose.Schema(
         {
           type: String,
           enum: [
-            "Plumber",
-            "Electrician",
-            "TV",
-            "Fridge",
-            "AC",
-            "Washing-Machine",
-            "Laptop",
+            "plumber",
+            "electrician",
+            "tv",
+            "fridge",
+            "ac",
+            "washing-machine",
+            "laptop",
           ],
         },
       ],
@@ -93,14 +93,14 @@ const workerSchema = new mongoose.Schema(
       type:Number,
       default:null,
     },
-    ratingsCount: {
-      type: Number,
-      default: 0,
-    },
-    ratingsPoints: {
-      type: Number,
-      default: 0,
-    }
+    // ratingsCount: {
+    //   type: Number,
+    //   default: 0,
+    // },
+    // ratingsPoints: {
+    //   type: Number,
+    //   default: 0,
+    // }
   },
   { timestamps: true }
 );

@@ -6,6 +6,7 @@ import {
     refreshAccessToken,
     changeCurrentPassword,
     getCurrentWorker,
+    updateCategory,
     updateProfilePhoto,
     updateEmail,
     updatePhone,
@@ -26,7 +27,8 @@ router.route("/logout").post(verifyJWT, logoutWorker)
 router.route("/refresh-token").post(refreshAccessToken)
 router.route("/change-password").post(verifyJWT, changeCurrentPassword)
 router.route("/current-user").get(verifyJWT, getCurrentWorker)
-router.route("/update-profilePhoto").patch(verifyJWT, upload.single("profilePhoto"), updateProfilePhoto)
+router.patch("/update-categories", verifyJWT,  updateCategory);
+router.route("/update-profile-photo").patch(verifyJWT, upload.single("profilePhoto"), updateProfilePhoto)
 router.route("/update-email").patch(verifyJWT, updateEmail)
 router.route("/update-phone").patch(verifyJWT, updatePhone)
 router.route("/update-address").patch(verifyJWT, updateAddress)

@@ -16,13 +16,13 @@ const serviceRequestSchema = new mongoose.Schema(
     category: {
       type: String,
       enum: [
-        "Plumber",
-        "Electrician",
-        "TV",
-        "Fridge",
-        "AC",
-        "Washing-Machine",
-        "Laptop",
+        "plumber",
+        "electrician",
+        "tv",
+        "fridge",
+        "ac",
+        "washing-machine",
+        "laptop"
       ],
       required: true,
     },

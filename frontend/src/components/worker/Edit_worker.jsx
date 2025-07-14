@@ -7,10 +7,10 @@ const Edit_worker = () => {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
-    fullName: workerData.fullName || "",
-    email: workerData.email || "",
-    phone: workerData.phone || "",
-    address: workerData.address || "",
+    fullName: workerData?.fullName || "",
+    email: workerData?.email || "",
+    phone: workerData?.phone || "",
+    address: workerData?.address || "",
   });
 
   const [editable, setEditable] = useState({
@@ -20,7 +20,9 @@ const Edit_worker = () => {
     address: false,
   });
 
-  const [workingCategory, setWorkingCategory] = useState(workerData.workingCategory || []);
+  const [workingCategory, setWorkingCategory] = useState(workerData?.workingCategory || []);
+  const [profilePhoto, setProfilePhoto] = useState(workerData?.profilePhoto || "");
+  const [photoFile, setPhotoFile] = useState(null);
 
   const updateFieldAPI = async (field, value) => {
     const apiMap = {
@@ -28,14 +30,30 @@ const Edit_worker = () => {
       email: "/api/v1/worker/update-email",
       phone: "/api/v1/worker/update-phone",
       address: "/api/v1/worker/update-address",
+      profilePhoto: "/api/v1/worker/update-profile-photo",
     };
 
     try {
-      await axios.patch(apiMap[field], { [field]: value }, { withCredentials: true });
-      alert(`${field} updated successfully!`);
+      if (field === "profilePhoto") {
+        const formData = new FormData();
+        formData.append("profilePhoto", value);
+
+        const { data } = await axios.patch(apiMap[field], formData, {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
+
+        setProfilePhoto(data.data.profilePhoto);
+        alert("Profile photo updated successfully!");
+      } else {
+        await axios.patch(apiMap[field], { [field]: value }, { withCredentials: true });
+        alert(`${field} updated successfully!`);
+      }
     } catch (err) {
       console.error(err);
-      alert(`Failed to update ${field}: ` + (err.response?.data?.message || err.message));
+      alert(`Failed to update ${field}: ${err.response?.data?.message || err.message}`);
     }
   };
 
@@ -57,13 +75,39 @@ const Edit_worker = () => {
     }));
   };
 
-  const handleAddCategory = () => {
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setPhotoFile(file);
+      setProfilePhoto(URL.createObjectURL(file));
+    }
+  };
+
+  const handleUploadPhoto = async () => {
+    if (photoFile) {
+      await updateFieldAPI("profilePhoto", photoFile);
+    }
+  };
+
+  const handleAddCategory = async() => {
     const input = document.getElementById("newCategory");
     const newCat = input.value.trim();
-    if (newCat && !workingCategory.includes(newCat)) {
-      setWorkingCategory((prev) => [...prev, newCat]);
-      input.value = "";
-    }
+
+    try {
+    const { data } = await axios.patch(
+      "/api/v1/worker/update-categories",
+      { newCategory: newCat },
+      { withCredentials: true }
+    );
+
+    setWorkingCategory(data.data.workingCategory); // updated from backend
+    input.value = "";
+    alert("Category added successfully!");
+  } catch (err) {
+    console.error(err);
+    alert("Failed to add category: " + (err.response?.data?.message || err.message));
+  }
+
   };
 
   const handleRemoveCategory = (index) => {
@@ -77,6 +121,42 @@ const Edit_worker = () => {
         style={{ maxWidth: "600px", margin: "0 auto", borderRadius: "16px" }}
       >
         <h3 className="text-center mb-4">Edit Worker Profile</h3>
+
+        {/* Profile Photo Section */}
+        <div className="text-center mb-4">
+          <div
+            style={{
+              width: "120px",
+              height: "120px",
+              borderRadius: "50%",
+              overflow: "hidden",
+              margin: "auto",
+              border: "2px solid #ccc",
+            }}
+          >
+            <img
+              src={profilePhoto || "https://cdn-icons-png.flaticon.com/512/149/149071.png"}
+              alt="Profile"
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          </div>
+
+          <input
+            type="file"
+            className="form-control mt-3"
+            accept="image/*"
+            onChange={handlePhotoChange}
+          />
+          <button
+            className="btn btn-primary mt-2"
+            onClick={handleUploadPhoto}
+            disabled={!photoFile}
+          >
+            Upload Photo
+          </button>
+        </div>
+
+        {/* Editable Fields */}
         <form className="mt-3">
           {["fullName", "email", "phone", "address"].map((field) => (
             <div className="mb-4" key={field}>
@@ -101,6 +181,7 @@ const Edit_worker = () => {
             </div>
           ))}
 
+          {/* Working Category Section */}
           <div className="mb-4">
             <label className="form-label">Working Categories</label>
             <div className="d-flex flex-wrap gap-2 mb-2">
@@ -136,13 +217,14 @@ const Edit_worker = () => {
             </div>
           </div>
 
+          {/* Go to Profile */}
           <div className="text-end mt-4">
             <button
               type="button"
               className="btn btn-primary"
               onClick={() =>
                 navigate("/worker", {
-                  state: { ...workerData, ...form, workingCategory },
+                  state: { ...workerData, ...form, profilePhoto, workingCategory },
                 })
               }
             >

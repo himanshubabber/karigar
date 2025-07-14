@@ -34,8 +34,18 @@ const registerWorker = asyncHandler(async (req, res) => {
     }
 
     // Optional: Validate each category is valid
-    const validCategories = ["plumber", "electrician", "tv", "fridge", "ac", "washing machine", "laptop"];
-    for (const category of workingCategory) {
+    const validCategories = [
+        "plumber",
+        "electrician",
+        "tv",
+        "fridge",
+        "ac",
+        "washing-machine",
+        "laptop"
+      ];
+      
+      for (const category of workingCategory) {
+        console.log(category)
         if (!validCategories.includes(category)) {
         throw new ApiError(400, `Invalid category: ${category}`);
         }
@@ -223,37 +233,60 @@ const getCurrentWorker = asyncHandler(async(req, res) => {
         "Worker fetched successfully"
     ))
 })
+const updateCategory= asyncHandler(async(req,res)=>{
+    const workerId = req.worker?._id;
+    console.log(workerId)
 
-const updateProfilePhoto= asyncHandler(async(req, res) => {
-    const profilePhotoLocalPath = req.file?.path
-
-    if (!profilePhotoLocalPath) {
-        throw new ApiError(400, "Profile Photo file is missing")
+    if (!workerId) throw new ApiError(401, "Unauthorized");
+  
+    const { newCategory } = req.body;
+  
+    if (!newCategory || typeof newCategory !== "string") {
+      throw new ApiError(400, "Invalid category");
     }
-
-    const profilePhoto = await uploadOnCloudinary(profilePhotoLocalPath)
-
-    if (!profilePhoto?.url) {
-        throw new ApiError(400, "Error while uploading Profile Photo")
-        
+  
+    const worker = await Worker.findById(workerId);
+    if (!worker) throw new ApiError(404, "Worker not found");
+  
+    if (!worker.workingCategory.includes(newCategory)) {
+      worker.workingCategory.push(newCategory);
+      await worker.save();
     }
-
-    const worker = await Worker.findByIdAndUpdate(
-        req.worker?._id,
-        {
-            $set:{
-                profilePhoto: profilePhoto.url
-            }
-        },
-        {new: true}
-    ).select("-password -refreshToken")
-
-    return res
-    .status(200)
-    .json(
-        new ApiResponse(200, worker, "Profile Photo updated successfully")
-    )
+    else{
+        res
+      .status(400)
+      .json(new ApiResponse(400,  "Category is already added "));
+    }
+  
+    res
+      .status(200)
+      .json(new ApiResponse(200, worker, "Category added successfully"));
 })
+
+const updateProfilePhoto = asyncHandler(async (req, res) => {
+    const workerId = req.worker?._id;
+  
+    if (!req.file) {
+      throw new ApiError(400, "Profile Photo file is missing");
+    }
+  
+    const fullUrl = `${req.protocol}://${req.get("host")}/temp/${req.file.filename}`;
+  
+    const updatedWorker = await Worker.findByIdAndUpdate(
+      workerId,
+      { profilePhoto: fullUrl },
+      { new: true }
+    ).select("-password -refreshToken");
+  
+    if (!updatedWorker) {
+      throw new ApiError(404, "Worker not found");
+    }
+  
+    return res.status(200).json(
+      new ApiResponse(200, updatedWorker, "Profile photo updated successfully")
+    );
+  });
+  
 
 const updateEmail = asyncHandler(async(req, res) => {
     const {email} = req.body
@@ -387,6 +420,7 @@ export{
     refreshAccessToken,
     changeCurrentPassword,
     getCurrentWorker,
+    updateCategory,
     updateProfilePhoto,
     updateEmail,
     updatePhone,
