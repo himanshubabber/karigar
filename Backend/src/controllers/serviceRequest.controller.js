@@ -163,7 +163,7 @@ const setQuoteAmount = asyncHandler(async (req, res) => {
 
   // Update the service request with worker details
   serviceRequest.workerId = workerId;
-  serviceRequest.orderStatus = "connected";
+  serviceRequest.orderStatus = "repairAmountQuoted";
   serviceRequest.connectedAt = new Date();
   serviceRequest.quoteAmount = quoteAmount;
   await serviceRequest.save();
@@ -756,7 +756,23 @@ const getServiceRequestDetails = asyncHandler(async (req, res) => {
 });
 
 
+const markPaymentDone = asyncHandler(async (req, res) => {
+  const { serviceRequestId } = req.body;
+ 
+  // Find the service request
+  const serviceRequest = await ServiceRequest.findById(serviceRequestId);
+  if (!serviceRequest) {
+    throw new ApiError(404, "Service request not found");
+  }
 
+  // Mark payment as done
+  serviceRequest.paymentStatus = "paid";
+  await serviceRequest.save();
+
+  return res.status(200).json(
+    new ApiResponse(200, serviceRequest, "Payment status updated to done")
+  );
+});
 
 export {
   createServiceRequest,
@@ -776,4 +792,5 @@ export {
   rateWorker,
   reportWorker,
   getServiceRequestDetails,
+  markPaymentDone,
 };

@@ -38,7 +38,11 @@ const Signin_customer = () => {
         throw new Error("Login failed: Missing customer or token in response");
       }
 
+      // ✅ Only this line added to store token
+      localStorage.setItem("karigar_customer_token", accessToken);
+
       loginCustomer(customer, accessToken);
+
       alert("Login successful!");
       navigate("/customer", { state: customer });
     } catch (err) {

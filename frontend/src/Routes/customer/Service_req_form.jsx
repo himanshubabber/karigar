@@ -3,6 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useServiceReq } from "../../Context/Service_req_context.jsx";
 import { useOtp } from "../../Context/Otp_context.jsx";
+import { useCustomer } from "../../Context/Customer_context.jsx"; // ✅ Import token from context
 
 const categories = [
   "plumber", "electrician", "carpenter", "painter",
@@ -14,6 +15,7 @@ const toTitleCase = (str) => str.split(" ").join(" ");
 const Service_req_form = () => {
   const { storeOtp } = useOtp();
   const { updateSelectedReq } = useServiceReq();
+  const { token } = useCustomer(); // ✅ get token from context
   const navigate = useNavigate();
 
   const [category, setCategory] = useState("");
@@ -62,13 +64,18 @@ const Service_req_form = () => {
   const handleStartRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
+
+      const mimeType = MediaRecorder.isTypeSupported("audio/mp4")
+        ? "audio/mp4"
+        : "audio/webm";
+
+      const recorder = new MediaRecorder(stream, { mimeType });
       const chunks = [];
 
       recorder.ondataavailable = (e) => chunks.push(e.data);
 
       recorder.onstop = () => {
-        const blob = new Blob(chunks, { type: "audio/webm" });
+        const blob = new Blob(chunks, { type: mimeType });
         setAudioBlob(blob);
         stream.getTracks().forEach((track) => track.stop());
         clearInterval(recordingIntervalRef.current);
@@ -134,11 +141,14 @@ const Service_req_form = () => {
           category: toTitleCase(category),
           description,
           customerLocation: location,
-          audioNoteUrl: audioNoteUrlStr
+          audioNoteUrl: audioNoteUrlStr,
         },
         {
-          headers: { "Content-Type": "application/json" },
-          withCredentials: true
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`, // ✅ use token in header
+          },
+          withCredentials: true,
         }
       );
 
@@ -148,14 +158,18 @@ const Service_req_form = () => {
 
       updateSelectedReq(serviceRequestData);
 
-      // ✅ Save to localStorage
       localStorage.setItem("selectedReq", JSON.stringify(serviceRequestData));
       localStorage.setItem("serviceRequestId", serviceRequestId);
 
       const otpRes = await axios.post(
         "/api/v1/customer/generate-otp",
         { serviceRequestId },
-        { withCredentials: true }
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        }
       );
 
       const { otp, expiresAt } = otpRes.data;

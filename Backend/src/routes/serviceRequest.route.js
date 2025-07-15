@@ -15,7 +15,8 @@ import {
     cancelledBySystemAsUnattended,
     rateWorker,
     reportWorker,
-    getServiceRequestDetails
+    getServiceRequestDetails,
+    markPaymentDone,
 } from "../controllers/serviceRequest.controller.js";
 
 import verifyJWTWorker from "../middlewares/workerAuth.middleware.js";
@@ -39,5 +40,6 @@ router.route("/cancelled-by-system-as-unattended").patch(cancelledBySystemAsUnat
 router.route("/:serviceRequestId/rate-worker").patch(verifyJWTCustomer, rateWorker);
 router.route("/:serviceRequestId/report-worker").post(verifyJWTCustomer, reportWorker);
 router.route("/get-service-details").post(getServiceRequestDetails);
+router.put("/mark-payment",verifyJWTCustomer, markPaymentDone);
 
 export default router;

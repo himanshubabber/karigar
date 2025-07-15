@@ -47,7 +47,7 @@ const manIcon = L.icon({
 });
 
 const Location_map_user = () => {
-  const { customer, token,setCustomer } = useCustomer();
+  const { customer,token,setCustomer } = useCustomer();
   const { worker, setWorker } = useWorker();
   const { otpData: otp } = useOtp();
   const { selectedReq: ser, updateSelectedReq } = useServiceReq();
@@ -126,21 +126,27 @@ const Location_map_user = () => {
       return;
     }
 
-    const token = localStorage.getItem("customer_token"); // <- ✅ THIS FIXES THE ISSUE
+   
    
   
     try {
       console.log({serviceRequestId})
       const { data } = await axios.post(
-      `/api/v1/payment/${serviceRequestId}/create-order`,
-      {}, // empty body (if required)
-    {
-      headers: {
-        Authorization: `Bearer ${token}`, // ✅ attach token
-      },
-    }
+        {
+          serviceRequestId: ser._id,
+          Authorization: `Bearer ${token}`,
+           // sending in body
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        }
+  
       );
 
+      setOtpShow(true)
       const options = {
         key: rzp_test_4RSGtzPekc2oSp, // <- ✅ Use VITE_ prefixed env var
         order_id: data.data.id,
@@ -204,6 +210,58 @@ const Location_map_user = () => {
 
   console.log(ser)
 
+  const handleOnPayment = async () => {
+    console.log(token);
+    try {
+      const response = await axios.put(
+        `/api/v1/serviceRequest/mark-payment`,
+        {
+          serviceRequestId: ser._id,
+          Authorization: `Bearer ${token}`,
+           // sending in body
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        }
+      );
+      console.log("✅ Payment status updated:", response.data);
+      setOtpShow(true)
+      // Optionally show success message or update UI
+    } catch (error) {
+      console.error("❌ Failed to update payment status:", error?.response?.data?.message || error.message);
+      // Optionally show error message to user
+    }
+  };
+  // service status show logic 
+
+  const statusMap = [
+    "searching",
+    "connected",
+    "onway",
+    "arrived",
+    "verified",
+    "repairAmountQuoted",
+    "accepted",
+    "completed"
+  ];
+  
+  const statusLabels = {
+    searching: "🔍 Searching for Technician",
+    connected: "🔗 Connected to Technician",
+    onway: "🚗 Technician On The Way",
+    arrived: "📍 Technician Arrived",
+    verified: "🔧 Issue Verified",
+    repairAmountQuoted: "💰 Repair Amount Quoted",
+    accepted: "✅ Repair Accepted",
+    completed: "🎉 Job Completed",
+  };
+  
+  const currentStatusIndex = statusMap.indexOf(ser?.orderStatus);
+  console.log(otp?.otp);
+  
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "20px" }}>
       <div style={{ width: "80%", maxWidth: "1200px" }}>
@@ -243,6 +301,24 @@ const Location_map_user = () => {
             <p><FaHammer /> <b>Category:</b> {ser?.category || "N/A"}</p>
             <p><MdOutlineDescription /> <b>Description:</b> {ser?.description || "N/A"}</p>
             <p><MdNetworkWifi /> <b>Job Status:</b> {ser?.jobStatus || "N/A"}</p>
+            <div className="card p-3 mb-4" style={{ width: "100%" }}>
+  <h5 className="mb-3">Service Progress</h5>
+  <div className="d-flex flex-column gap-2">
+    {statusMap.map((step, idx) => (
+      <div
+        key={step}
+        className={`p-2 rounded ${idx <= currentStatusIndex ? "bg-success text-white" : "bg-light text-secondary"}`}
+        style={{
+          fontWeight: idx === currentStatusIndex ? "bold" : "normal",
+          borderLeft: idx === currentStatusIndex ? "5px solid #28a745" : "5px solid #ccc",
+          paddingLeft: "10px"
+        }}
+      >
+        {statusLabels[step]}
+      </div>
+    ))}
+  </div>
+</div>
             <p><RiMoneyDollarCircleFill /> <b>Payment:</b> {ser?.paymentStatus || "N/A"}</p>
             <p><AiTwotoneAudio /> <b>Audio Note:</b></p>
             {ser?.audioNoteUrl ? (
@@ -257,14 +333,15 @@ const Location_map_user = () => {
             {typeof ser?.quoteAmount === "number" && <div>
             <h5>total amount: {
 ser.visitingCharge+ser.quoteAmount}</h5>
+            
             <button className="btn btn-primary mb-2"
-            // onClick={handlePayment}
+             onClick={handleOnPayment }
             >Pay to Start</button>
-
             {otpShow && <h4>OTP: {otp?.otp || "N/A"}</h4>}
             <div>{otp?.otp}</div>
             </div>
 }
+           {/* <h4>OTP: {otp?.otp || "N/A"}</h4> */}
             {!showCancelOptions ? (
               <button className="btn btn-danger mt-3" onClick={() => setShowCancelOptions(true)}>
                 Cancel
