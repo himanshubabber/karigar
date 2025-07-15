@@ -251,6 +251,11 @@ const generateOtpobj = asyncHandler(async (req, res) => {
   });
 });
 
+const getCustomerById = asyncHandler(async (req, res) => {
+  const customer = await Customer.findById(req.body.id).select("fullName email phone");
+  if (!worker) throw new ApiError(404, "customer not found");
+  res.status(200).json(new ApiResponse(200, customer, "customer fetched"));
+});
 
 export {
   registerCustomer,
@@ -265,4 +270,5 @@ export {
   updateAddress,
   updateFullName,
   generateOtpobj,
+  getCustomerById,
 };

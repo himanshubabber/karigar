@@ -12,6 +12,7 @@ import {
     updateAddress,
     updateFullName,
     generateOtpobj,
+    getCustomerById,
 } from "../controllers/customer.controller.js";
 import {upload} from "../middlewares/multer.middleware.js"
 import verifyJWT from "../middlewares/customerAuth.middleware.js";
@@ -33,7 +34,7 @@ router.route("/update-phone").patch(verifyJWT, updatePhone)
 router.route("/update-address").patch(verifyJWT, updateAddress)
 router.route("/update-fullName").patch(verifyJWT, updateFullName)
 router.route("/generate-otp").post(verifyJWT,generateOtpobj)
-
+router.route("/customer-info").post(getCustomerById);
 
 
 export default router

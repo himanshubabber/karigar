@@ -787,6 +787,19 @@ const getCustomerHistory = asyncHandler(async (req, res) => {
 });
 
 
+const getWorkerHistory= asyncHandler(async (req, res) => {
+  const workerId = req.worker?._id;
+
+  const serviceRequests = await  ServiceRequest.find({ workerId })
+    .sort({ createdAt: -1 })
+    .select("-__v")
+
+  return res.status(200).json(
+    new ApiResponse(200, serviceRequests, "Customer service history fetched")
+  );
+});
+
+
 
 export {
   createServiceRequest,
@@ -808,4 +821,5 @@ export {
   getServiceRequestDetails,
   markPaymentDone,
   getCustomerHistory,
+  getWorkerHistory,
 };
