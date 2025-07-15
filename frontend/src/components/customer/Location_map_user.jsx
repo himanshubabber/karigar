@@ -266,7 +266,10 @@ const Location_map_user = () => {
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "20px" }}>
       <div style={{ width: "80%", maxWidth: "1200px" }}>
         <div style={{ width: "100%", marginBottom: "20px" }}>
-          {destination && userPosition ? (
+          {destination && ser.orderStatus!=="completed"
+          &&
+ser.orderStatus !== ''
+          && userPosition ? (
             <MapContainer
               center={userPosition}
               zoom={13}
@@ -330,7 +333,8 @@ const Location_map_user = () => {
 
           {/* Cancel & Payment */}
           <div className="card p-4 text-center" style={{ flex: "1", minWidth: "280px" }}>
-            {typeof ser?.quoteAmount === "number" && <div>
+
+            {ser.orderStatus!=="completed" && typeof ser?.quoteAmount === "number" && <div>
             <h5>total amount: {
 ser.visitingCharge+ser.quoteAmount}</h5>
             
@@ -342,16 +346,30 @@ ser.visitingCharge+ser.quoteAmount}</h5>
             </div>
 }
            {/* <h4>OTP: {otp?.otp || "N/A"}</h4> */}
-            {!showCancelOptions ? (
-              <button className="btn btn-danger mt-3" onClick={() => setShowCancelOptions(true)}>
-                Cancel
-              </button>
-            ) : (
-              <div className="d-flex flex-column gap-2 mt-2">
-                <button className="btn btn-warning" onClick={handle_notproceed}>Don't want to proceed</button>
-                <button className="btn btn-secondary">Worker not responding</button>
-              </div>
-            )}
+           {ser.orderStatus !== "completed" ? (
+  !showCancelOptions ? (
+    <button className="btn btn-danger mt-3" onClick={() => setShowCancelOptions(true)}>
+      Cancel
+    </button>
+  ) : (
+    <div className="d-flex flex-column gap-2 mt-2">
+      <button className="btn btn-warning" onClick={handle_notproceed}>Don't want to proceed</button>
+      <button className="btn btn-secondary">Worker not responding</button>
+    </div>
+  )
+) : (
+  <div className="text-center mt-3">
+    <div className="alert alert-success">
+      ✅ Your service request has been successfully completed.
+    </div>
+    <button
+      className="btn btn-primary mt-2"
+      onClick={() => navigate("/customer")} // or "/profile" if that's your profile route
+    >
+      Go to Profile
+    </button>
+  </div>
+)}
           </div>
 
           {/* Worker Info */}

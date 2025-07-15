@@ -760,7 +760,7 @@ const markPaymentDone = asyncHandler(async (req, res) => {
   const { serviceRequestId } = req.body;
  
   // Find the service request
-  const serviceRequest = await ServiceRequest.findById(serviceRequestId);
+  const serviceRequest = await  ServiceRequest.findById(serviceRequestId);
   if (!serviceRequest) {
     throw new ApiError(404, "Service request not found");
   }
@@ -773,6 +773,20 @@ const markPaymentDone = asyncHandler(async (req, res) => {
     new ApiResponse(200, serviceRequest, "Payment status updated to done")
   );
 });
+
+const getCustomerHistory = asyncHandler(async (req, res) => {
+  const customerId = req.customer?._id;
+
+  const serviceRequests = await  ServiceRequest.find({ customerId })
+    .sort({ createdAt: -1 })
+    .select("-__v")
+
+  return res.status(200).json(
+    new ApiResponse(200, serviceRequests, "Customer service history fetched")
+  );
+});
+
+
 
 export {
   createServiceRequest,
@@ -793,4 +807,5 @@ export {
   reportWorker,
   getServiceRequestDetails,
   markPaymentDone,
+  getCustomerHistory,
 };

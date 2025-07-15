@@ -17,6 +17,7 @@ import {
     reportWorker,
     getServiceRequestDetails,
     markPaymentDone,
+    getCustomerHistory,
 } from "../controllers/serviceRequest.controller.js";
 
 import verifyJWTWorker from "../middlewares/workerAuth.middleware.js";
@@ -41,5 +42,6 @@ router.route("/:serviceRequestId/rate-worker").patch(verifyJWTCustomer, rateWork
 router.route("/:serviceRequestId/report-worker").post(verifyJWTCustomer, reportWorker);
 router.route("/get-service-details").post(getServiceRequestDetails);
 router.put("/mark-payment",verifyJWTCustomer, markPaymentDone);
+router.get("/history", verifyJWTCustomer, getCustomerHistory);
 
 export default router;

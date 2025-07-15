@@ -5,7 +5,7 @@ import { useWorker } from "../../Context/Worker_context";
 
 const Signin_worker = () => {
   const navigate = useNavigate();
-  const { setWorker } = useWorker();
+  const { loginWorker } = useWorker();
 
   const [form, setForm] = useState({
     email: "",
@@ -33,11 +33,19 @@ const Signin_worker = () => {
       });
 
       const worker = res.data?.data?.worker;
-      setWorker(worker);
+      const accessToken = res.data?.data?.accessToken;
+
+      if (!worker || !accessToken) {
+        throw new Error("Login failed: Missing worker or token");
+      }
+
+      // ✅ Save to context + localStorage
+      loginWorker(worker, accessToken);
+
       alert("Login successful!");
       navigate("/worker", { state: worker });
     } catch (err) {
-      console.error(err);
+      console.error("Login failed:", err);
       alert("Login failed: " + (err.response?.data?.message || err.message));
     }
   };
@@ -69,14 +77,14 @@ const Signin_worker = () => {
               />
             </div>
             <p className="mt-3 text-center">
-               Don't have an account?{" "}
-            <span
-             style={{ color: "#007bff", cursor: "pointer", textDecoration: "underline" }}
-             onClick={() => navigate("/signup_worker")}
-             >
-          Sign up here
-         </span>
-        </p>
+              Don't have an account?{" "}
+              <span
+                style={{ color: "#007bff", cursor: "pointer", textDecoration: "underline" }}
+                onClick={() => navigate("/signup_worker")}
+              >
+                Sign up here
+              </span>
+            </p>
             <button type="submit" className="btn btn-primary w-100">
               Sign In
             </button>
