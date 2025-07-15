@@ -398,8 +398,7 @@ const updateWorkerLocation = asyncHandler(async (req, res) => {
       },
       { new: true }
     );
-    console.log(updatedWorker)
-  
+   
     if (!updatedWorker) {
       throw new ApiError(404, "Worker not found");
     }

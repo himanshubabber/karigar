@@ -23,8 +23,22 @@ export const verifyJWT = asyncHandler(async(req, _, next) => {
         req.user = { _id:decodedToken._id };
         req.worker = worker;
         next()
-    } catch (error) {
-        throw new ApiError(401, error?.message || "Invalid access token")
+    } catch (err) {
+        if (err.name === "TokenExpiredError") {
+            // Allow logout route only
+            if (req.originalUrl.includes("/logout")) {
+              const decoded = jwt.decode(token);
+              if (decoded?._id) {
+                const worker = await Worker.findById(decoded._id).select("-password");
+                if (worker) {
+                  req.worker = worker;
+                  return next();
+                }
+              }
+            }
+    }
+
+        throw new ApiError(401, err?.message || "Invalid access token")
     }
     
 })

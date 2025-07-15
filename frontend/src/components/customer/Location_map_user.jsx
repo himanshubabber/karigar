@@ -7,6 +7,7 @@ import {
   useMap,
 } from "react-leaflet";
 import L from "leaflet";
+import "leaflet-routing-machine"
 import "leaflet/dist/leaflet.css";
 import "leaflet-routing-machine";
 import "leaflet-routing-machine/dist/leaflet-routing-machine.css";
@@ -46,7 +47,7 @@ const manIcon = L.icon({
 });
 
 const Location_map_user = () => {
-  const { customer, setCustomer } = useCustomer();
+  const { customer, token,setCustomer } = useCustomer();
   const { worker, setWorker } = useWorker();
   const { otpData: otp } = useOtp();
   const { selectedReq: ser, updateSelectedReq } = useServiceReq();
@@ -57,6 +58,7 @@ const Location_map_user = () => {
   const [track, setTrack] = useState(false);
 
   const serviceRequestId = ser?._id || localStorage.getItem("serviceRequestId");
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (serviceRequestId) {
@@ -103,8 +105,6 @@ const Location_map_user = () => {
     };
   }, [track]);
 
-  const navigate = useNavigate();
-
   const handle_notproceed = () => {
     navigate("/customer");
   };
@@ -120,57 +120,51 @@ const Location_map_user = () => {
   };
 
   const handlePayment = async () => {
-    const res = await loadRazorpayScript();
-    if (!res) {
-      alert("Razorpay SDK failed to load. Check your connection.");
+    const isScriptLoaded = await loadRazorpayScript();
+    if (!isScriptLoaded) {
+      alert("Razorpay SDK failed to load. Are you online?");
       return;
     }
 
+    const token = localStorage.getItem("customer_token"); // <- ✅ THIS FIXES THE ISSUE
+   
+  
     try {
+      console.log({serviceRequestId})
       const { data } = await axios.post(
-        `/api/v1/payment/${serviceRequestId}/create-order`,
-        {},
-        { headers: { Authorization: `Bearer ${customer?.token}` } }
+      `/api/v1/payment/${serviceRequestId}/create-order`,
+      {}, // empty body (if required)
+    {
+      headers: {
+        Authorization: `Bearer ${token}`, // ✅ attach token
+      },
+    }
       );
 
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-        amount: data.amount,
-        currency: data.currency,
-        name: "Karigar",
-        description: "Service payment",
-        order_id: data.id,
+        key: rzp_test_4RSGtzPekc2oSp, // <- ✅ Use VITE_ prefixed env var
+        order_id: data.data.id,
+        ...data.data,
         handler: async function (response) {
+          const options = {
+            razorpayPaymentId: response.razorpay_payment_id,
+            razorpayOrderId: response.razorpay_order_id,
+            razorpaySignature: response.razorpay_signature,
+          };
           try {
-            await axios.post(
-              `/api/v1/payment/${serviceRequestId}/verify-payment`,
-              {
-                razorpayPaymentId: response.razorpay_payment_id,
-                razorpayOrderId: response.razorpay_order_id,
-                razorpaySignature: response.razorpay_signature,
-              },
-              { headers: { Authorization: `Bearer ${customer?.token}` } }
-            );
+            await axios.post(`/api/v1/payment/${serviceRequestId}/verify-payment`, options);
             alert("Payment successful!");
-            setOtpShow(true);
-          } catch (err) {
-            console.error("Payment verification failed:", err);
-            alert("Payment failed to verify.");
+          } catch {
+            alert("Payment verification failed.");
           }
         },
-        prefill: {
-          name: customer?.fullName || "Customer",
-          email: customer?.email || "customer@example.com",
-          contact: customer?.phone || "9999999999",
-        },
-        theme: { color: "#3399cc" },
       };
 
       const rzp = new window.Razorpay(options);
       rzp.open();
     } catch (err) {
-      console.error("Order creation failed:", err);
-      alert("Unable to initiate payment.");
+      console.error("Payment error:", err);
+      alert("Failed to initiate payment.");
     }
   };
 
@@ -191,6 +185,7 @@ const Location_map_user = () => {
 
   function Routing({ from }) {
     const map = useMap();
+    if ( !map) return;
     useEffect(() => {
       if (!from) return;
       const control = L.Routing.control({
@@ -207,7 +202,7 @@ const Location_map_user = () => {
     return null;
   }
 
-  const mapCenter = userPosition || [28.6139, 77.209];
+  console.log(ser)
 
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "20px" }}>
@@ -240,7 +235,6 @@ const Location_map_user = () => {
           )}
         </div>
 
-        {/* 👇 FLEX WRAPPER FOR 3 CARDS */}
         <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", justifyContent: "space-between" }}>
           {/* Request Info */}
           <div className="card p-4" style={{ flex: "1", minWidth: "280px" }}>
@@ -260,10 +254,17 @@ const Location_map_user = () => {
 
           {/* Cancel & Payment */}
           <div className="card p-4 text-center" style={{ flex: "1", minWidth: "280px" }}>
-            <h5>Visiting Charge: ₹59</h5>
-            <button className="btn btn-primary mb-2" onClick={handlePayment}>Pay to Start</button>
+            {typeof ser?.quoteAmount === "number" && <div>
+            <h5>total amount: {
+ser.visitingCharge+ser.quoteAmount}</h5>
+            <button className="btn btn-primary mb-2"
+            // onClick={handlePayment}
+            >Pay to Start</button>
+
             {otpShow && <h4>OTP: {otp?.otp || "N/A"}</h4>}
             <div>{otp?.otp}</div>
+            </div>
+}
             {!showCancelOptions ? (
               <button className="btn btn-danger mt-3" onClick={() => setShowCancelOptions(true)}>
                 Cancel

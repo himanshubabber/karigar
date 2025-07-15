@@ -8,7 +8,7 @@ const verifyJWT = asyncHandler(async (req, _, next) => {
     req.cookies?.accessToken ||
     req.header("Authorization")?.replace("Bearer ", "");
 
-
+  console.log(token)
   if (!token) {
     throw new ApiError(401, "Unauthorized request: No token provided");
   }
@@ -16,9 +16,15 @@ const verifyJWT = asyncHandler(async (req, _, next) => {
   try {
     const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
+    console.log(decodedToken)
+
+
+
     const customer = await Customer.findById(decodedToken?._id).select(
       "-password -refreshToken"
     );
+
+    console.log(customer)
 
     if (!customer) {
       throw new ApiError(401, "Invalid access token: Customer not found");

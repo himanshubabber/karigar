@@ -45,20 +45,21 @@ const Worker_middle = ({ isOnline, setIsOnline, worker }) => {
       const res = await axios.post("/api/v1/worker/logout", null, {
         withCredentials: true,
       });
+
+      console.log(res);
   
-      if (res.status === 200) {
+      if (res.status === 200 || res.data?.success) {
         localStorage.removeItem("token");
-        navigate("/signin");
+        navigate("/signin", { replace: true });
       } else {
         alert(`Logout failed: ${res.statusText}`);
       }
     } catch (err) {
       console.error("Logout error:", err);
-      alert(
-        err?.response?.data?.message || "An error occurred during logout."
-      );
+      alert(err?.response?.data?.message || "An error occurred during logout.");
     }
   };
+  
 
   if (!worker) {
     return (

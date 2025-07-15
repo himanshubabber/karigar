@@ -130,9 +130,11 @@ const acceptRequest = asyncHandler(async (req, res) => {
 
   // Populate customer and worker data for full frontend use
   const populatedRequest = await ServiceRequest.findById(serviceRequestId)
+    .select("-__v")
     .populate("customerId", "-password")
     .populate("workerId", "-password");
-
+    
+    console.log()
   if (!populatedRequest) {
     throw new ApiError(500, "Failed to retrieve updated request");
   }
@@ -146,6 +148,8 @@ const setQuoteAmount = asyncHandler(async (req, res) => {
   
   const workerId = req.worker?._id;
   const { serviceRequestId } = req.params;
+  const { quoteAmount } = req.body;
+
 
   const serviceRequest = await ServiceRequest.findById(serviceRequestId);
   if (!serviceRequest) {
@@ -153,25 +157,22 @@ const setQuoteAmount = asyncHandler(async (req, res) => {
   }
 
   // Check if the request is already accepted or completed
-  if (serviceRequest.workerId || serviceRequest.orderStatus !== "searching") {
+  if ( serviceRequest.orderStatus !== "connected") {
     throw new ApiError(400, "Service request already accepted or completed");
   }
 
   // Update the service request with worker details
   serviceRequest.workerId = workerId;
   serviceRequest.orderStatus = "connected";
-  serviceRequest.workerLocation = {
-    type: "Point",
-    coordinates: req.worker.currentLocation.coordinates,
-  };
   serviceRequest.connectedAt = new Date();
+  serviceRequest.quoteAmount = quoteAmount;
   await serviceRequest.save();
 
   const updatedServiceRequest = await ServiceRequest.findById(
     serviceRequestId
-  ).select(
-    "_id customerId workerId category description customerLocation workerLocation orderStatus audioNoteUrl "
-  );
+  ).select("-__v")
+
+  console.log(updatedServiceRequest);
 
   if (!updatedServiceRequest) {
     throw new ApiError(500, "Service request not found after accepting");
@@ -733,6 +734,7 @@ const getServiceRequestDetails = asyncHandler(async (req, res) => {
   }
 
   const serviceRequest = await ServiceRequest.findById(serviceRequestId)
+    .select("-__v")
     .populate("customerId", "-password")
     .populate("workerId", "-password");
 

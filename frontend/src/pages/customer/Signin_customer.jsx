@@ -3,7 +3,6 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useCustomer } from "../../Context/Customer_context";
 
-
 const Signin_customer = () => {
   const navigate = useNavigate();
   const { loginCustomer } = useCustomer();
@@ -33,12 +32,17 @@ const Signin_customer = () => {
       });
 
       const customer = res.data?.data?.customer;
-      loginCustomer(customer,customer.AccessToken);
+      const accessToken = res.data?.data?.accessToken;
+
+      if (!customer || !accessToken) {
+        throw new Error("Login failed: Missing customer or token in response");
+      }
+
+      loginCustomer(customer, accessToken);
       alert("Login successful!");
       navigate("/customer", { state: customer });
     } catch (err) {
-      console.log("kya hua");
-      console.error(err);
+      console.error("Login failed:", err);
       alert("Login failed: " + (err.response?.data?.message || err.message));
     }
   };
@@ -63,15 +67,17 @@ const Signin_customer = () => {
                 />
               </div>
             ))}
-             <p className="mt-3 text-center">
-               Don't have an account?{" "}
-            <span
-             style={{ color: "#007bff", cursor: "pointer", textDecoration: "underline" }}
-             onClick={() => navigate("/signup_customer")}
-             >
-             Sign up here
-            </span>
-          </p>
+
+            <p className="mt-3 text-center">
+              Don't have an account?{" "}
+              <span
+                style={{ color: "#007bff", cursor: "pointer", textDecoration: "underline" }}
+                onClick={() => navigate("/signup_customer")}
+              >
+                Sign up here
+              </span>
+            </p>
+
             <button type="submit" className="btn btn-primary w-100">
               Sign In
             </button>
@@ -81,7 +87,5 @@ const Signin_customer = () => {
     </div>
   );
 };
-
-
 
 export default Signin_customer;

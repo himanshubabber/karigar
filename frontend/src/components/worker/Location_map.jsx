@@ -114,6 +114,9 @@ const Location_map = () => {
   const [address, setAddress] = useState("");
   const [showCancelOptions, setShowCancelOptions] = useState(false);
   const [otp, setOtp] = useState("");
+  const [quoteAmount, setQuoteAmount] = useState("");
+  const [quoteMessage, setQuoteMessage] = useState(null);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -192,7 +195,25 @@ const Location_map = () => {
       return () => navigator.geolocation.clearWatch(watchId);
   });
 
-
+  const handleQuoteSubmit = async () => {
+    if (!quoteAmount || isNaN(quoteAmount)) {
+      return alert("Please enter a valid amount");
+    }
+  
+    try {
+      const res = await axios.patch(
+        `/api/v1/serviceRequest/${order._id}/set-quote-amount`,
+        { quoteAmount },
+        { withCredentials: true }
+      );
+  
+      setQuoteMessage("✅ Quote submitted successfully");
+    } catch (err) {
+      console.error("Quote submission error:", err);
+      setQuoteMessage("❌ " + (err.response?.data?.message || "Failed to submit quote"));
+    }
+  };
+  
   
 
   return (
@@ -247,9 +268,45 @@ const Location_map = () => {
                 Open in Google Maps
               </a>
 
+
               <hr style={{ margin: "15px 0" }} />
-              
-              <Otp_timer/>
+              <hr style={{ margin: "20px 0" }} />
+
+       <div style={{ marginBottom: "25px" }}>
+        <label htmlFor="quoteAmount" className="form-label fw-bold">
+        💰 Set Your Quote (₹):
+       </label>
+
+         <input
+         type="number"
+         id="quoteAmount"
+         className="form-control"
+        placeholder="e.g., 500"
+    value={quoteAmount}
+    onChange={(e) => setQuoteAmount(e.target.value)}
+    style={{ marginTop: "6px", marginBottom: "12px" }}
+        />
+
+  <button
+    className="btn btn-primary w-100 fw-semibold"
+    onClick={handleQuoteSubmit}
+      >
+     Submit Quote
+        </button>
+
+        {quoteMessage && (
+           <p
+           className={`fw-semibold mt-3 mb-0 text-center ${
+         quoteMessage.startsWith("✅") ? "text-success" : "text-danger"
+          }`}
+            >
+            {quoteMessage}
+             </p>
+            )}
+            </div>
+
+            {setQuoteAmount && 
+            <div> <Otp_timer/>
               <input
                 type="text"
                 value={otp}
@@ -268,6 +325,8 @@ const Location_map = () => {
               >
                 Submit OTP
               </button>
+              </div>
+}
 
               {!showCancelOptions ? (
                 <button className="btn btn-danger" style={{ width: "100%" }} onClick={() => setShowCancelOptions(true)}>
