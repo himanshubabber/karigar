@@ -14,6 +14,7 @@ import {
     updateFullName,
     updateWorkerLocation,
     verifyOtpForService,
+    getWorkerById,
 } from "../controllers/worker.controller.js";
 import {upload} from "../middlewares/multer.middleware.js"
 import {verifyJWT} from "../middlewares/workerAuth.middleware.js"
@@ -36,5 +37,5 @@ router.route("/update-address").patch(verifyJWT, updateAddress)
 router.route("/update-fullName").patch(verifyJWT, updateFullName)
 router.route("/update-location").post(verifyJWT, updateWorkerLocation);
 router.route("/verify-otp").post(verifyJWT, verifyOtpForService);
-
+router.route("/worker-info").post(getWorkerById);
 export default router

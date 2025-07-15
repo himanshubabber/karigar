@@ -440,6 +440,12 @@ const updateWorkerLocation = asyncHandler(async (req, res) => {
     res.status(200).json({ message: "OTP verified. Job marked as completed." });
 };
 
+const getWorkerById = asyncHandler(async (req, res) => {
+    const worker = await Worker.findById(req.body.id).select("fullName email phone");
+    if (!worker) throw new ApiError(404, "Worker not found");
+    res.status(200).json(new ApiResponse(200, worker, "Worker fetched"));
+  });
+  
 export{
     registerWorker,
     loginWorker,
@@ -455,4 +461,5 @@ export{
     updateFullName,
     updateWorkerLocation,
     verifyOtpForService,
+    getWorkerById,
 }
