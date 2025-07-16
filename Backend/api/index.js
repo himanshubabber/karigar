@@ -40,10 +40,21 @@ app.get("/api/ping", (req, res) => {
 });
 
 app.use(cors({
-  origin:process.env.CORS_ORIGIN  ||  "http://localhost:5173",
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  origin: function (origin, callback) {
+    const allowedOrigins = [process.env.CORS_ORIGIN, "http://localhost:5173"];
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true,
-}))
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+}));
+
+app.options("*", cors());
+
+
 
 
 app.use(express.json({limit: "16kb"}))
