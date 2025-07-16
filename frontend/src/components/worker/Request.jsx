@@ -44,7 +44,7 @@ const Request = ({ request }) => {
 
           // Fetch full service request details
           const fullDetails = await axios.post(
-            "/api/v1/serviceRequest/get-service-details",
+            "https://karigarbackend.vercel.app/api/v1/serviceRequest/get-service-details",
             { serviceRequestId: _id },
             { withCredentials: true }
           );
