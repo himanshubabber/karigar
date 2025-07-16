@@ -7,6 +7,10 @@ dotenv.config();
 
 const app = express()
 
+app.get("/", (req, res) => {
+  res.send("Hello himanshu");
+});
+
 
 // Temporary: allow both localhost and frontend
 app.use(cors({
@@ -38,11 +42,10 @@ app.use("/api/v1/worker", workerRouter)
 app.use("/api/v1/payment", paymentRouter)
 app.use("/api/v1/serviceRequest", serviceRequestRouter);
 
-app.get("/", (req, res) => {
-    res.send("Hello himanshu");
-  });
+
   
 
 // http://localhost:8000/api/v1/users/register
 
-export { app }
+ export default app;
+
