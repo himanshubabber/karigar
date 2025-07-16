@@ -1,5 +1,4 @@
 import dotenv from "dotenv";
-import serverlessExpress from "@vendia/serverless-express";
 import connectDB from "../src/db/index.js";
 import app from "../app.js";
 
