@@ -63,7 +63,7 @@ const Location_map_user = () => {
   useEffect(() => {
     if (serviceRequestId) {
       axios
-        .post("/api/v1/serviceRequest/get-service-details", { serviceRequestId })
+        .post("https://karigarbackend.vercel.app/api/v1/serviceRequest/get-service-details", { serviceRequestId })
         .then((response) => {
           const resData = response.data?.data;
           const {
@@ -158,7 +158,8 @@ const Location_map_user = () => {
             razorpaySignature: response.razorpay_signature,
           };
           try {
-            await axios.post(`/api/v1/payment/${serviceRequestId}/verify-payment`, options);
+            await axios.post(`
+              https://karigarbackend.vercel.app/api/v1/payment/${serviceRequestId}/verify-payment`, options);
             alert("Payment successful!");
           } catch {
             alert("Payment verification failed.");
@@ -214,7 +215,7 @@ const Location_map_user = () => {
     console.log(token);
     try {
       const response = await axios.put(
-        `/api/v1/serviceRequest/mark-payment`,
+        "https://karigarbackend.vercel.app/api/v1/serviceRequest/mark-payment",
         {
           serviceRequestId: ser._id,
           Authorization: `Bearer ${token}`,

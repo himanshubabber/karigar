@@ -9,7 +9,7 @@ const Requests = () => {
   useEffect(() => {
     const fetchRequests = async () => {
       try {
-        const res = await axios.get("/api/v1/serviceRequest/find-requests", {
+        const res = await axios.get("https://karigarbackend.vercel.app/api/v1/serviceRequest/find-requests", {
           withCredentials: true,
         });
         updateAllRequests(res.data.data);

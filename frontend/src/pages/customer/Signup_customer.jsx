@@ -50,7 +50,7 @@ const Signup_customer = () => {
         formData.append("profilePhoto", profilePhoto);
       }
 
-      const res = await axios.post("/api/v1/customer/register", formData, {
+      const res = await axios.post("https://karigarbackend.vercel.app/api/v1/customer/register", formData, {
         withCredentials: true,
         headers: {
           "Content-Type": "multipart/form-data",

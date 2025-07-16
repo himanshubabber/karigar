@@ -155,7 +155,7 @@ const Location_map = () => {
   
     try {
       const res = await axios.post(
-        `/api/v1/worker/verify-otp`, // Adjust base path if needed
+        `https://karigarbackend.vercel.app/api/v1/worker/verify-otp`, // Adjust base path if needed
         {
           serviceRequestId: order._id,
           otp: otp
@@ -177,7 +177,7 @@ const Location_map = () => {
           const { latitude, longitude } = pos.coords;
           console.log(pos);
           try {
-            await axios.post("/api/v1/worker/update-location", {
+            await axios.post("https://karigarbackend.vercel.app/api/v1/worker/update-location", {
               coordinates: [longitude, latitude],
             },
             { withCredentials: true },
@@ -202,7 +202,7 @@ const Location_map = () => {
   
     try {
       const res = await axios.patch(
-        `/api/v1/serviceRequest/${order._id}/set-quote-amount`,
+        `https://karigarbackend.vercel.app/api/v1/serviceRequest/${order._id}/set-quote-amount`,
         { quoteAmount },
         { withCredentials: true }
       );

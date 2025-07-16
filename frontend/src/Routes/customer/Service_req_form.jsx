@@ -136,7 +136,7 @@ const Service_req_form = () => {
       }
 
       const res = await axios.post(
-        "/api/v1/serviceRequest/create",
+        "https://karigarbackend.vercel.app/api/v1/serviceRequest/create",
         {
           category: toTitleCase(category),
           description,
@@ -162,7 +162,7 @@ const Service_req_form = () => {
       localStorage.setItem("serviceRequestId", serviceRequestId);
 
       const otpRes = await axios.post(
-        "/api/v1/customer/generate-otp",
+        "https://karigarbackend.vercel.app/api/v1/customer/generate-otp",
         { serviceRequestId },
         {
           headers: {

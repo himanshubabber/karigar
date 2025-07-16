@@ -13,7 +13,7 @@ const History_worker = () => {
   // Fetch service request history
   const fetchWorkerHistory = async () => {
     try {
-      const { data } = await axios.get("/api/v1/serviceRequest/history_worker", {
+      const { data } = await axios.get("https://karigarbackend.vercel.app/api/v1/serviceRequest/history_worker", {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
@@ -37,7 +37,7 @@ const History_worker = () => {
       for (const id of uniqueCustomerIds) {
         if (newMap[id]) continue;
         try {
-          const { data } = await axios.post("/api/v1/customer/customer-info", { id });
+          const { data } = await axios.post("https://karigarbackend.vercel.app/api/v1/customer/customer-info", { id });
           newMap[id] = data?.data;
         } catch (err) {
           console.error("Error fetching customer info for", id);

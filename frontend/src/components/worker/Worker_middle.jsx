@@ -42,7 +42,7 @@ const Worker_middle = ({ isOnline, setIsOnline, worker }) => {
 
   const handleLogout = async () => {
     try {
-      const res = await axios.post("/api/v1/worker/logout", null, {
+      const res = await axios.post("https://karigarbackend.vercel.app/api/v1/worker/logout", null, {
         withCredentials: true,
       });
 
