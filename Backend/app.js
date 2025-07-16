@@ -23,6 +23,7 @@ const allowedOrigins = [
   // Add any additional frontend URLs here
 ];
 
+
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
