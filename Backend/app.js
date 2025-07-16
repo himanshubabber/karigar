@@ -17,12 +17,25 @@ const app = express();
 await connectDB();
 
 // CORS setup
+const allowedOrigins = [
+  process.env.CORS_ORIGIN || "http://localhost:5173",
+  // Add any additional frontend URLs here
+];
+
 const corsOptions = {
-  origin: [process.env.CORS_ORIGIN || "http://localhost:5173"],
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 };
+
 app.use(cors(corsOptions));
+
 
 // Middleware
 app.use(express.json({ limit: "16kb" }));
