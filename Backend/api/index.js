@@ -1,19 +1,12 @@
-import dotenv from "dotenv"
+import dotenv from "dotenv";
 import connectDB from "../src/db/index.js";
-import app from '../app.js'
+import app from "../app.js";
+import serverlessExpress from "@vendia/serverless-express";
+
 dotenv.config({
-    path: './.env'
-})
+  path: "./.env",
+});
 
+await connectDB(); 
 
-
-connectDB()
-.then(() => {
-    app.listen(process.env.PORT || 8000, () => {
-        console.log(`⚙️ Server is running at port : ${process.env.PORT}`);
-    })
-})
-.catch((err) => {
-    console.log("MONGO db connection failed !!! ", err);
-})
-
+export default serverlessExpress({ app });
