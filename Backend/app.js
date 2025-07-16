@@ -20,6 +20,7 @@ await connectDB();
 // CORS setup
 const allowedOrigins = [
   process.env.CORS_ORIGIN || "http://localhost:5173" || "https://karigar-mu.vercel.app",
+  
   // Add any additional frontend URLs here
 ];
 
