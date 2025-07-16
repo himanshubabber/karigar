@@ -25,6 +25,7 @@ const Signin_customer = () => {
       alert("Both fields are required.");
       return;
     }
+    console.log(e);
 
     try {
       const res = await axios.post("https://karigarbackend.vercel.app/api/v1/customer/login", form, {
