@@ -34,7 +34,7 @@ const Request = ({ request }) => {
         try {
           // Accept the request
           await axios.post(
-            "/api/v1/serviceRequest/accept",
+            "https://karigarbackend.vercel.app/api/v1/serviceRequest/accept",
             { 
               serviceRequestId: _id,
               coordinates: [longitude, latitude],
