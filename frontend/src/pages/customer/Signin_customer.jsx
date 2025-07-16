@@ -27,7 +27,7 @@ const Signin_customer = () => {
     }
 
     try {
-      const res = await axios.post("/api/v1/customer/login", form, {
+      const res = await axios.post("https://karigarbackend.vercel.app/api/v1/customer/login", form, {
         withCredentials: true,
       });
 

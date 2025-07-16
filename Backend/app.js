@@ -14,10 +14,18 @@ app.get("/", (req, res) => {
 
 // Temporary: allow both localhost and frontend
 app.use(cors({
-  origin:process.env.CORS_ORIGIN , 
+  origin: function (origin, callback) {
+    const allowed = [process.env.CORS_ORIGIN, "http://localhost:5173"];
+    if (!origin || allowed.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   credentials: true
-}))
+}));
+
 
 
 app.use(express.json({limit: "16kb"}))
