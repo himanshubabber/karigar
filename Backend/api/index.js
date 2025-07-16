@@ -1,21 +1,40 @@
+
+
+import express from "express";
 import dotenv from "dotenv";
-import connectDB from "../src/db/index.js";
-import app from "../app.js";
-import serverlessExpress from "@vendia/serverless-express";
+import connectDB from "../src/db/index.js"; 
 
 dotenv.config();
 
-let serverPromise;
+const app = express();
 
-const setup = async () => {
-  await connectDB();
-  return serverlessExpress({ app });
+
+let isDBConnected = false;
+const initDB = async () => {
+  if (!isDBConnected) {
+    try {
+      await connectDB();
+      isDBConnected = true;
+      console.log("MongoDB connected");
+    } catch (error) {
+      console.error("MongoDB connection failed:", error);
+    }
+  }
 };
 
-serverPromise = setup();
 
-export default async function handler(req, res) {
-  const server = await serverPromise;
-  return server(req, res);
-}
+await initDB();
 
+
+app.use(express.json());
+
+
+app.get("/", (req, res) => {
+  res.send("Hello from Express on Vercel!");
+});
+
+app.get("/api/ping", (req, res) => {
+  res.json({ ping: "pong", time: new Date() });
+});
+
+export default app;
