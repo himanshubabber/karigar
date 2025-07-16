@@ -18,3 +18,4 @@ export default async function handler(req, res) {
   const server = await serverPromise;
   return server(req, res);
 }
+
