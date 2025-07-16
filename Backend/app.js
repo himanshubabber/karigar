@@ -1,51 +1,35 @@
-import express from "express"
-import cors from "cors"
-import cookieParser from "cookie-parser"
+import express from "express";
 import dotenv from "dotenv";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import connectDB from "./src/db/index.js";
+
+// Initialize env
 dotenv.config();
 
+const app = express();
 
-const app = express()
+// Connect MongoDB — optional for serverless (or use lazy on request)
+let isDBConnected = false;
+const initDB = async () => {
+  if (!isDBConnected) {
+    try {
+      await connectDB();
+      isDBConnected = true;
+      console.log("✅ MongoDB connected");
+    } catch (error) {
+      console.error("❌ DB connection error: ", error.message);
+    }
+  }
+};
+await initDB();
 
-app.get("/", (req, res) => {
-  res.send("Hello himanshu");
-});
+// Middleware
+app.use(cors({ origin: process.env.CORS_ORIGIN, credentials: true }));
+app.use(express.json());
+app.use(cookieParser());
 
+// Routes
+app.get("/", (_, res) => res.send("Hello from Express!"));
 
-// Temporary: allow both localhost and frontend
-
-app.use(cors({
-  origin:process.env.CORS_ORIGIN ,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  credentials: true,
-}))
-
-
-app.use(express.json({limit: "16kb"}))
-app.use(express.urlencoded({extended: true, limit: "16kb"}))
-app.use(express.static("public"))
-app.use(cookieParser())
-
-
-//routes import
-import customerRouter from "./src/routes/customer.route.js"
-import workerRouter from "./src/routes/worker.route.js"
-import serviceRequestRouter from "./src/routes/serviceRequest.route.js"
-import paymentRouter from "./src/routes/payment.route.js"
-
-
-
-
-
-//routes declaration
-app.use("/api/v1/customer", customerRouter)
-app.use("/api/v1/worker", workerRouter)
-app.use("/api/v1/payment", paymentRouter)
-app.use("/api/v1/serviceRequest", serviceRequestRouter);
-
-
-
-
-// http://localhost:8000/api/v1/users/register
-
- export default app;
+export default app;
