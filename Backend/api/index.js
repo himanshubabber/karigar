@@ -1,23 +1,20 @@
 import dotenv from "dotenv";
 import connectDB from "../src/db/index.js";
 import app from "../app.js";
+import serverlessExpress from "@vendia/serverless-express";
 
 dotenv.config();
 
-let server;
+let serverPromise;
 
 const setup = async () => {
-  try {
-    await connectDB();
-    server = serverlessExpress({ app });
-  } catch (err) {
-    console.error("❌ MongoDB connection failed:", err);
-    throw err;
-  }
+  await connectDB();
+  return serverlessExpress({ app });
 };
 
-await setup();
+serverPromise = setup();
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
+  const server = await serverPromise;
   return server(req, res);
 }
