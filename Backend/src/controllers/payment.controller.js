@@ -7,10 +7,12 @@ import { ServiceRequest } from "../models/serviceRequest.model.js";
 import { platformCharge } from "../constants.js";
 import { Transaction } from "../models/transaction.model.js";
 import crypto from "crypto";
+import dotenv from "dotenv";
+dotenv.config();
 
 const razorpayInstance = new razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
+  key_id: process.env.VITE_RAZORPAY_KEY_ID,
+  key_secret: process.env.VITE_RAZORPAY_KEY_SECRET,
 });
 
 const createOrder = asyncHandler(async (req, res) => {
