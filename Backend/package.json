@@ -4,6 +4,7 @@
     "dev": "nodemon -r dotenv/config --experimental-json-modules src/index.js"
   },
   "dependencies": {
+    "@vendia/serverless-express": "^4.12.6",
     "bcrypt": "^6.0.0",
     "cloudinary": "^2.7.0",
     "cookie-parser": "^1.4.7",
