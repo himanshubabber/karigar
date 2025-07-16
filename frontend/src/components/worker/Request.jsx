@@ -48,7 +48,7 @@ const Request = ({ request }) => {
             { serviceRequestId: _id },
             { withCredentials: true }
           );
-
+         
           const fetchedRequest = fullDetails?.data?.data?.serviceRequest;
           console.log(fetchedRequest)
 
