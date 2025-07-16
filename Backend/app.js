@@ -27,10 +27,10 @@ app.use(cookieParser())
 
 
 //routes import
-import customerRouter from "./routes/customer.route.js"
-import workerRouter from "./routes/worker.route.js"
-import serviceRequestRouter from "./routes/serviceRequest.route.js"
-import paymentRouter from "./routes/payment.route.js"
+import customerRouter from "./src/routes/customer.route.js"
+import workerRouter from "./src/routes/worker.route.js"
+import serviceRequestRouter from "./src/routes/serviceRequest.route.js"
+import paymentRouter from "./src/routes/payment.route.js"
 
 
 
