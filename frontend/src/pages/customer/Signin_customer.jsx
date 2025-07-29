@@ -79,7 +79,7 @@ const Signin_customer = () => {
                 style={{ color: "#007bff", cursor: "pointer", textDecoration: "underline" }}
                 onClick={() => navigate("/signup_customer")}
               >
-                Sign up here
+                Sign up 
               </span>
             </p>
 
