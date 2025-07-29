@@ -82,7 +82,7 @@ const Signin_worker = () => {
                 style={{ color: "#007bff", cursor: "pointer", textDecoration: "underline" }}
                 onClick={() => navigate("/signup_worker")}
               >
-                Sign up here
+                Sign up
               </span>
             </p>
             <button type="submit" className="btn btn-primary w-100">
