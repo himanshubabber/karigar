@@ -32,7 +32,7 @@ const Signin_customer = () => {
     console.log(e);
 
     try {
-      const res = await axios.post("http://localhost:8000/api/v1/customer/login", form, {
+      const res = await axios.post("https://karigarbackend.vercel.app/api/v1/customer/login", form, {
         withCredentials: true,
       });
 
