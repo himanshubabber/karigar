@@ -2,10 +2,13 @@ import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useCustomer } from "../../Context/Customer_context";
+import Spinner from "../../components/Style/Spinner.jsx";
+// import api from "../../../api.js"
 
 const Signin_customer = () => {
   const navigate = useNavigate();
   const { loginCustomer } = useCustomer();
+  const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
     email: "",
@@ -25,10 +28,11 @@ const Signin_customer = () => {
       alert("Both fields are required.");
       return;
     }
+    setLoading(true);
     console.log(e);
 
     try {
-      const res = await axios.post("https://karigarbackend.vercel.app/api/v1/customer/login", form, {
+      const res = await axios.post("http://localhost:8000/api/v1/customer/login", form, {
         withCredentials: true,
       });
 
@@ -46,9 +50,12 @@ const Signin_customer = () => {
 
       alert("Login successful!");
       navigate("/customer", { state: customer });
-    } catch (err) {
-      console.error("Login failed:", err);
-      alert("Login failed: " + (err.response?.data?.message || err.message));
+    } catch (Error) {
+      console.error("Login failed:", Error.response.data.message);
+      alert("Login failed: " + (Error.response?.data?.message || Error.message));
+    }
+    finally {
+      setLoading(false);
     }
   };
 
@@ -89,6 +96,7 @@ const Signin_customer = () => {
           </form>
         </div>
       </div>
+      {loading && <Spinner/>}
     </div>
   );
 };

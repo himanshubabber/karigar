@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useWorker } from "../../Context/Worker_context";
+import Spinner from "../Style/Spinner";
 
 const History_worker = () => {
   const { token } = useWorker();
@@ -13,11 +14,12 @@ const History_worker = () => {
   // Fetch service request history
   const fetchWorkerHistory = async () => {
     try {
-      const { data } = await axios.get("https://karigarbackend.vercel.app/api/v1/serviceRequest/history_worker", {
+      const { data } = await axios.get("http://localhost:8000/api/v1/serviceRequest/history_worker", {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
       setHistory(data?.data || []);
+      console.log(data);
     } catch (err) {
       console.error("Failed to fetch history", err);
     } finally {
@@ -29,7 +31,7 @@ const History_worker = () => {
   useEffect(() => {
     const fetchAllCustomerInfo = async () => {
       const uniqueCustomerIds = [
-        ...new Set(history.map((item) => item.customer).filter(Boolean)),
+        ...new Set(history.map((item) => item.customerId).filter(Boolean)),
       ];
 
       const newMap = { ...customerInfoMap };
@@ -37,7 +39,8 @@ const History_worker = () => {
       for (const id of uniqueCustomerIds) {
         if (newMap[id]) continue;
         try {
-          const { data } = await axios.post("https://karigarbackend.vercel.app/api/v1/customer/customer-info", { id });
+          const { data } = await axios.post("http://localhost:8000/api/v1/customer/customer-info", { id });
+          console.log("customer id",data);
           newMap[id] = data?.data;
         } catch (err) {
           console.error("Error fetching customer info for", id);
@@ -65,7 +68,7 @@ const History_worker = () => {
 
       {loading ? (
         <div className="text-center py-5">
-          <div className="spinner-border text-primary" role="status" />
+           <div className="spinner-border text-primary" role="status" /> 
           <p className="mt-3">Fetching your service history...</p>
         </div>
       ) : history.length === 0 ? (
@@ -75,7 +78,7 @@ const History_worker = () => {
       ) : (
         <div className="row row-cols-1 row-cols-md-1 row-cols-lg-2 g-4 d-flex justify-content-center">
           {history.map((item, index) => {
-            const customer = item.customer ? customerInfoMap[item.customer] : null;
+            const customer = item.customerId ? customerInfoMap[item.customerId] : null;
 
             return (
               <div className="col" key={index}>
@@ -151,6 +154,24 @@ const History_worker = () => {
           })}
         </div>
       )}
+      {loading && (
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          background: "rgba(255, 255, 255, 0.6)",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          zIndex: 9999,
+        }}
+      >
+        <Spinner />
+      </div>
+    )}
     </div>
   );
 };

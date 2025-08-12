@@ -3,37 +3,42 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import jwt from "jsonwebtoken";
 import { Customer } from "../models/customer.model.js";
 
-const verifyJWT = asyncHandler(async (req, _, next) => {
-  const token =
-    req.cookies?.accessToken ||
-    req.header("Authorization")?.replace("Bearer ", "");
-
-  console.log(token)
-  if (!token) {
-    throw new ApiError(401, "Unauthorized request: No token provided");
-  }
-
+export const verifyJWTCustomer = asyncHandler(async (req, _, next) => {
   try {
-    const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET)  ;
+    const token =
+      req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "");
 
-    console.log(decodedToken)
-
-
-
-    const customer = await Customer.findById(decodedToken?._id).select(
-      "-password -refreshToken"
-    );
-
-
-    if (!customer) {
-      throw new ApiError(401, "Invalid access token: Customer not found");
+    if (!token) {
+      throw new ApiError(401, "Unauthorized request");
     }
 
+    const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+
+    const customer = await Customer.findById(decodedToken?._id).select("-password -refreshToken");
+
+    if (!customer) {
+      throw new ApiError(401, "Invalid Access Token");
+    }
+
+    req.user = { _id: decodedToken._id };
     req.customer = customer;
     next();
   } catch (err) {
-    throw new ApiError(401, "Unauthorized request: " + (err?.message || "Invalid token"));
+    if (err.name === "TokenExpiredError") {
+      // Allow logout route only
+      if (req.originalUrl.includes("/logout")) {
+        const decoded = jwt.decode(token);
+        if (decoded?._id) {
+          const customer = await Customer.findById(decoded._id).select("-password");
+          if (customer) {
+            req.customer = customer;
+            return next();
+          }
+        }
+      }
+    }
+    throw new ApiError(401, err?.message || "Invalid access token");
   }
 });
 
-export default verifyJWT;
+export default verifyJWTCustomer;

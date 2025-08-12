@@ -157,7 +157,7 @@ const setQuoteAmount = asyncHandler(async (req, res) => {
   }
 
   // Check if the request is already accepted or completed
-  if ( serviceRequest.orderStatus !== "connected") {
+  if ( serviceRequest.orderStatus === "completed") {
     throw new ApiError(400, "Service request already accepted or completed");
   }
 
@@ -303,281 +303,236 @@ const updateWorkerLocation = asyncHandler(async (req, res) => {
 
 const cancelledByWorkerAsCustomerNotResponding = asyncHandler(async (req, res) => {
   const { serviceRequestId } = req.params;
+  const { distance } = req.body;
   const workerId = req.worker?._id;
 
-  // Find the service request
+  if (typeof distance !== "number" || distance > 30) {
+    throw new ApiError(400, "You must be within 20 meters of the customer to cancel for non-response");
+  }
+
   const serviceRequest = await ServiceRequest.findById(serviceRequestId);
-  if (!serviceRequest) {
-    throw new ApiError(404, "Service request not found");
+  console.log("cancel request service",serviceRequest)
+  if (!serviceRequest) throw new ApiError(404, "Service request not found");
+  // if (serviceRequest.workerId?.toString() !== workerId) {
+  //   throw new ApiError(400, "Service request not accepted by this worker");
+  // }
+  if (serviceRequest.orderStatus === "cancelled") {
+    throw new ApiError(400, "service Request already cancelled");
   }
 
-  // Check if the request is accepted by this worker
-  if (serviceRequest.workerId?.toString() !== workerId) {
-    throw new ApiError(400, "Service request not accepted by this worker or not in connected state");
+  if (serviceRequest.orderStatus !== "arrived") {
+    throw new ApiError(400, "Worker has not arrived at the customer location, cannot cancel");
   }
 
-  if(serviceRequest.orderStatus !== "arrived") {
-    throw new ApiError(400, "Worker has not arrived at the Customer location, cannot cancel");
-  }
-  // Update the service request status
-  serviceRequest.orderStatus = "cancelled";
-  serviceRequest.cancelledBy = "worker";
-  serviceRequest.cancelledAt = new Date();
-  serviceRequest.cancellationReason = "customerNotResponding";
-  serviceRequest.jobStatus = "completed"; // Mark job as completed since worker is cancelling
-  serviceRequest.completedAt = new Date();
+
+
+  // Cancel request
+  Object.assign(serviceRequest, {
+    orderStatus: "cancelled",
+    cancelledBy: "worker",
+    cancelledAt: new Date(),
+    cancellationReason: "customerNotResponding",
+    jobStatus: "completed",
+    completedAt: new Date(),
+  });
   await serviceRequest.save();
 
-  const cancel= await Cancellation.create({
-    serviceRequestId: serviceRequest._id,
-    cancelledBy: "worker",
+  // Log cancellation
+  // await Cancellation.create({
+  //   serviceRequestId,
+  //   cancelledBy: "worker",
+  //   customerId: serviceRequest.customerId,
+  //   workerId,
+  //   cancellationReason: "customerNotResponding",
+  // });
+
+  // Count past cancellations in last 6 months
+  const count = await Cancellation.countDocuments({
     customerId: serviceRequest.customerId,
-    workerId: workerId,
     cancellationReason: "customerNotResponding",
-  })
-  
-  const customerNotRespondingCancellations = await Cancellation.find({
-    customerId: serviceRequest.customerId,
-    cancellationReason: "customerNotResponding",
-    createdAt: { $gte: new Date(Date.now() -  6 * 30 * 24 * 60 * 60 * 1000) }  // Last 6 months
-  })
+    createdAt: { $gte: new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000) },
+  });
 
-  if( customerNotRespondingCancellations.length == 1) {
-    const customer =await Customer.findById(serviceRequest.customerId);
-    if(customer) {
-      customer.suspendedUntil = new Date(Date.now() + 24 * 60 * 60 * 1000); // Suspend for 24 hours
-      await customer.save();
-    }
-  }
-  else if(customerNotRespondingCancellations.length == 2) {
-    const customer =await Customer.findById(serviceRequest.customerId);
-    if(customer) {
-      customer.suspendedUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // Suspend for 7 days
-      await customer.save();
-    }
-  }
-  else if(customerNotRespondingCancellations.length == 3) {
-    const customer =await Customer.findById(serviceRequest.customerId);
-    if(customer) {
-      customer.suspendedUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // Suspend for 30 days
-      await customer.save();
-    }
-  }
-  else if(customerNotRespondingCancellations.length >= 4) {
-    const customer =await Customer.findById(serviceRequest.customerId);
-    if(customer) {
-      customer.suspendedUntil = new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000); // Suspend for 6 months
-      await customer.save();
-    }
+  // Suspension mapping
+  const suspensions = { 1: 1, 2: 7, 3: 30 };
+  const suspendDays = suspensions[count] || (count >= 4 ? 180 : 0);
+
+  if (suspendDays) {
+    await Customer.findByIdAndUpdate(serviceRequest.customerId, {
+      suspendedUntil: new Date(Date.now() + suspendDays * 24 * 60 * 60 * 1000),
+    });
   }
 
-  const updatedServiceRequest = await ServiceRequest.findById(serviceRequestId).select("_id customerId workerId category description customerLocation workerLocation orderStatus audioNoteUrl");
+  const updated = await ServiceRequest.findById(serviceRequestId)
+    .select("_id customerId workerId category description customerLocation workerLocation orderStatus audioNoteUrl");
 
-  if (!updatedServiceRequest) {
-    throw new ApiError(404, "Service request not found after cancellation");
-  }
+  if (!updated) throw new ApiError(404, "Service request not found after cancellation");
 
-  return res.status(200).json(
-    new ApiResponse(200, updatedServiceRequest, "Service request cancelled successfully")
-  );
+  res.status(200).json(new ApiResponse(200, updated, "Service request cancelled successfully"));
 })
 
 const cancelledByWorkerAsNotAbleToServe= asyncHandler(async (req, res) => {
   const { serviceRequestId } = req.params;
   const workerId = req.worker?._id;
 
-  // Find the service request
   const serviceRequest = await ServiceRequest.findById(serviceRequestId);
-  if (!serviceRequest) {
-    throw new ApiError(404, "Service request not found");
-  }
+  if (!serviceRequest) throw new ApiError(404, "Service request not found");
+  console.log("cancel service req",serviceRequest);
+  // if (serviceRequest.workerId?.toString() !== workerId)
+  //   throw new ApiError(400, "Service request not accepted by this worker");
 
-  // Check if the request is accepted by this worker
-  if (serviceRequest.workerId?.toString() !== workerId || serviceRequest.orderStatus === "searching") {
-    throw new ApiError(400, "Service request not accepted by this worker or not in connected state");
-  }
-
-  // Update the service request status
-  serviceRequest.orderStatus = "cancelled";
-  serviceRequest.cancelledBy = "worker";
-  serviceRequest.cancelledAt = new Date();
-  serviceRequest.cancellationReason = "workerNotAbleToServe";
-  serviceRequest.jobStatus = "completed"; // Mark job as completed since worker is cancelling
-  serviceRequest.completedAt = new Date();
+  // Cancel request
+  Object.assign(serviceRequest, {
+    orderStatus: "cancelled",
+    cancelledBy: "worker",
+    cancelledAt: new Date(),
+    cancellationReason: "workerNotAbleToServe",
+    jobStatus: "completed",
+    completedAt: new Date(),
+  });
   await serviceRequest.save();
 
-  const cancel= await Cancellation.create({
-    serviceRequestId: serviceRequest._id,
-    cancelledBy: "worker",
-    customerId: serviceRequest.customerId,
-    workerId: workerId,
-    cancellationReason: "workerNotAbleToServe",
-  })
+  // Log cancellation
+  // await Cancellation.create({
+  //   serviceRequestId,
+  //   cancelledBy: "worker",
+  //   customerId: serviceRequest.customerId,
+  //   workerId,
+  //   cancellationReason: "workerNotAbleToServe",
+  // });
 
-
-  const workerNotAbleToServeCancellations = await Cancellation.find({
-    workerId: workerId,
-    cancellationReason: "workerNotAbleToServe",
-    createdAt: { $gte: new Date(Date.now() -  1 * 30 * 24 * 60 * 60 * 1000) }  // Last 1 months
-  })
-
-  if(workerNotAbleToServeCancellations.length == 1) {
-    const worker = await Worker.findById(workerId);
-    if(worker) {        
-      worker.suspendedUntil = new Date(Date.now() + 24 * 60 * 60 * 1000); // Suspend for 24 hours
-      await worker.save();
-    }
-  }
-  else if(workerNotAbleToServeCancellations.length == 2) {
-    const worker = await Worker.findById(workerId);
-    if(worker) {        
-      worker.suspendedUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // Suspend for 7 days
-      await worker.save();
-    }
-  }
-  else if(workerNotAbleToServeCancellations.length == 3) {
-    const worker = await Worker.findById(workerId);   
-    if(worker) {        
-      worker.suspendedUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // Suspend for 30 days
-      await worker.save();
-    }
-  }
-  else if(workerNotAbleToServeCancellations.length >= 4) { 
-    const worker = await Worker.findById(workerId);   
-    if(worker) {        
-      worker.suspendedUntil = new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000); // Suspend for 6 months
-      await worker.save();
-    }
+  // Suspend if 2 in a row
+  const lastTwo = await ServiceRequest.find({ workerId })
+    .sort({ cancelledAt: -1 })
+    .limit(2);
+  if (lastTwo.length === 2 && lastTwo.every(r => r.orderStatus === "cancelled")) {
+    await Worker.findByIdAndUpdate(workerId, {
+      suspendedUntil: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    });
   }
 
-  const updatedServiceRequest = await ServiceRequest.findById(serviceRequestId).select("_id customerId workerId category description customerLocation workerLocation orderStatus audioNoteUrl");
-  
-  if (!updatedServiceRequest) {
-    throw new ApiError(404, "Service request not found after cancellation");
-  }
+  const updated = await ServiceRequest.findById(serviceRequestId)
+    .select("_id customerId workerId category description customerLocation workerLocation orderStatus audioNoteUrl");
 
-  return res.status(200).json(
-    new ApiResponse(200,updatedServiceRequest, "Service request cancelled successfully")
-  );
+  if (!updated) throw new ApiError(404, "Service request not found after cancellation");
+
+  res.status(200).json(new ApiResponse(200, updated, "Service request cancelled successfully"));
 })
 
 const cancelledByCustomerAsWorkerNotRespondingOrLate = asyncHandler(async (req, res) => {
   const { serviceRequestId } = req.params;
+  const { distance } = req.body;
   const customerId = req.customer?._id;
 
-  // Find the service request
+  // Check distance
+  if (typeof distance !== "number" || distance <= 20) {
+    res.status(400).json({ message: "Cannot cancel: worker is too close (<= 20m)" });
+
+  }
+
   const serviceRequest = await ServiceRequest.findById(serviceRequestId);
-  if (!serviceRequest) {
-    throw new ApiError(404, "Service request not found");
+  if (!serviceRequest) throw new ApiError(404, "Service request not found");
+  if (serviceRequest.customerId?.toString() !== customerId)
+    throw new ApiError(400, "Not your service request");
+  if (serviceRequest.orderStatus === "arrived")
+    throw new ApiError(400, "Worker has already arrived");
+
+  // Check time since request was created
+  const hoursSinceCreated = (Date.now() - new Date(serviceRequest.createdAt)) / (1000 * 60 * 60);
+  if (hoursSinceCreated <= 1.5) {
+    throw new ApiError(400, "Cannot cancel yet: worker has 1.5 hours to respond/arrive");
   }
 
-  // Check if the request belongs to this customer
-  if (serviceRequest.customerId?.toString() !== customerId ) {
-    throw new ApiError(400, "Service request not belonging to this customer or not in connected state");
-  }
-
-  if(serviceRequest.orderStatus === "arrived"){
-    throw new ApiError(400, "Worker has already arrived at the location, cannot cancel");
-  }
-  // Update the service request status
-  serviceRequest.orderStatus = "cancelled";
-  serviceRequest.cancelledBy = "customer";
-  serviceRequest.cancelledAt = new Date();
-  serviceRequest.cancellationReason = "workerNotRespondingOrLate";
-  serviceRequest.jobStatus = "completed"; // Mark job as completed since customer is cancelling
-  serviceRequest.completedAt = new Date();
+  // Cancel request
+  Object.assign(serviceRequest, {
+    orderStatus: "cancelled",
+    cancelledBy: "customer",
+    cancelledAt: new Date(),
+    cancellationReason: "workerNotRespondingOrLate",
+    jobStatus: "completed",
+    completedAt: new Date(),
+  });
   await serviceRequest.save();
 
-  const cancel= await Cancellation.create({
-    serviceRequestId: serviceRequest._id,
-    cancelledBy: "customer",
-    customerId: customerId, 
+  // Log cancellation
+  // await Cancellation.create({
+  //   serviceRequestId,
+  //   cancelledBy: "customer",
+  //   customerId,
+  //   workerId: serviceRequest.workerId,
+  //   cancellationReason: "workerNotRespondingOrLate",
+  // });
+
+  // Count past worker late/non-response cancellations in last month
+  const count = await Cancellation.countDocuments({
     workerId: serviceRequest.workerId,
     cancellationReason: "workerNotRespondingOrLate",
-  })
+    createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+  });
 
-  const workerNotRespondingCancellations = await Cancellation.find({
-    workerId: serviceRequest.workerId,
-    cancellationReason: "workerNotRespondingOrLate",  
-    createdAt: { $gte: new Date(Date.now() -  1 * 30 * 24 * 60 * 60 * 1000) }  // Last 1 months
-  })
+  // Suspension mapping
+  const suspensions = { 1: 1, 2: 3, 3: 7 };
+  const suspendDays = suspensions[count] || (count >= 4 ? 30 : 0);
 
-  if(workerNotRespondingCancellations.length == 1) {
-    const worker = await Worker.findById(serviceRequest.workerId);
-    if(worker) {        
-      worker.suspendedUntil = new Date(Date.now() + 24 * 60 * 60 * 1000); // Suspend for 24 hours
-      await worker.save();
-    }
-  }
-  else if(workerNotRespondingCancellations.length == 2) {
-    const worker = await Worker.findById(serviceRequest.workerId);
-    if(worker) {        
-      worker.suspendedUntil = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000); // Suspend for 3 days
-      await worker.save();
-    }
-  }
-  else if(workerNotRespondingCancellations.length == 3) {
-    const worker = await Worker.findById(serviceRequest.workerId);   
-    if(worker) {        
-      worker.suspendedUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);  // Suspend for 7 days
-      await worker.save();
-    }
-  }
-  else if(workerNotRespondingCancellations.length >= 4) { 
-    const worker = await Worker.findById(serviceRequest.workerId);   
-    if(worker) {        
-      worker.suspendedUntil = new Date(Date.now() + 1 * 30 * 24 * 60 * 60 * 1000); // Suspend for 30 days
-      await worker.save();
-    }
+  if (suspendDays) {
+    await Worker.findByIdAndUpdate(serviceRequest.workerId, {
+      suspendedUntil: new Date(Date.now() + suspendDays * 24 * 60 * 60 * 1000),
+    });
   }
 
-  const updatedServiceRequest = await ServiceRequest.findById(serviceRequestId).select("_id customerId workerId category description customerLocation workerLocation orderStatus audioNoteUrl");
+  const updated = await ServiceRequest.findById(serviceRequestId)
+    .select("_id customerId workerId category description customerLocation workerLocation orderStatus audioNoteUrl");
 
-  if (!updatedServiceRequest) {
-    throw new ApiError(404, "Service request not found after cancellation");
-  }
+  if (!updated) throw new ApiError(404, "Service request not found after cancellation");
 
-  return res.status(200).json(
-    new ApiResponse(200, updatedServiceRequest, "Service request cancelled successfully")
-  );
+  res.status(200).json(new ApiResponse(200, updated, "Service request cancelled successfully"));
 })
 
 const cancelledByCustomerAsByMistake = asyncHandler(async (req, res) => {
   const { serviceRequestId } = req.params;
   const customerId = req.customer?._id;
 
-  // Find the service request
   const serviceRequest = await ServiceRequest.findById(serviceRequestId);
-  if (!serviceRequest) {
-    throw new ApiError(404, "Service request not found");
-  }
+  if (!serviceRequest) throw new ApiError(404, "Service request not found");
 
-  // Check if the request belongs to this customer
-  if (serviceRequest.customerId?.toString() !== customerId ) {
-    throw new ApiError(400, "Service request not belonging to this customer or not in connected state");
-  }
+  if (serviceRequest.customerId?.toString() !== customerId)
+    throw new ApiError(400, "Not your service request");
 
-  if(Date.now() - serviceRequest.connectedAt.getTime() > 40 * 1000) { 
+  // Allow only if within 40s of connection
+  if (Date.now() - new Date(serviceRequest.connectedAt).getTime() > 40 * 1000) {
     throw new ApiError(400, "Cannot cancel service request after 30sec of connection");
   }
-  // Update the service request status
-  serviceRequest.orderStatus = "cancelled";
-  serviceRequest.jobStatus = "completed"; // Mark job as completed since customer is cancelling
-  serviceRequest.completedAt = new Date();
-  serviceRequest.cancelledBy = "customer";
-  serviceRequest.cancelledAt = new Date();
-  serviceRequest.cancellationReason = "byMistake";
+
+  // Visiting charge (you can pull from DB or config)
+  const visitingCharge = 50; // Example: 50 currency units
+
+  // Mark cancellation
+  Object.assign(serviceRequest, {
+    orderStatus: "cancelled",
+    jobStatus: "completed",
+    completedAt: new Date(),
+    cancelledBy: "customer",
+    cancelledAt: new Date(),
+    cancellationReason: "byMistake",
+    visitingCharge: visitingCharge, // Store in DB for later billing
+  });
   await serviceRequest.save();
-  
-  const updatedServiceRequest = await ServiceRequest.findById(serviceRequestId).select("_id customerId workerId category description customerLocation workerLocation orderStatus audioNoteUrl");
 
-  if (!updatedServiceRequest) {
-    throw new ApiError(404, "Service request not found after cancellation");
-  }
+  // Optionally record a transaction or invoice
+  await Payment.create({
+    customerId,
+    serviceRequestId,
+    amount: visitingCharge,
+    reason: "Visiting charge due to cancellation by mistake",
+    status: "pending", // Or "paid" if auto-collected
+  });
 
-  return res.status(200).json(
-    new ApiResponse(200, updatedServiceRequest, "Service request cancelled successfully")
-  );
+  const updated = await ServiceRequest.findById(serviceRequestId)
+    .select("_id customerId workerId category description customerLocation workerLocation orderStatus audioNoteUrl visitingCharge");
+
+  if (!updated) throw new ApiError(404, "Service request not found after cancellation");
+   
+  res.status(200).json(new ApiResponse(200, updated, `Service request cancelled by mistake. Visiting charge of ${visitingCharge} applied.`));
 })
 
 const cancelBySystemAsNotConnected = asyncHandler(async (req, res) => {
@@ -801,6 +756,29 @@ const getWorkerHistory= asyncHandler(async (req, res) => {
 
 
 
+const updateJobStatus = asyncHandler(async (req, res) => {
+  const { serviceRequestId, newStatus } = req.body;
+
+  if (!serviceRequestId || !newStatus) {
+    return res.status(400).json(new ApiResponse(400, null, "serviceRequestId and newStatus are required"));
+  }
+
+  const serviceRequest = await ServiceRequest.findById(serviceRequestId);
+
+  if (!serviceRequest) {
+    return res.status(404).json(new ApiResponse(404, null, "Service request not found"));
+  }
+
+  serviceRequest.orderStatus = newStatus;
+
+  await serviceRequest.save();
+
+  return res.status(200).json(new ApiResponse(200, serviceRequest, "Job status updated successfully"));
+});
+
+
+
+
 export {
   createServiceRequest,
   getAllRequestsGroupedByWorker,
@@ -822,4 +800,5 @@ export {
   markPaymentDone,
   getCustomerHistory,
   getWorkerHistory,
+  updateJobStatus,
 };

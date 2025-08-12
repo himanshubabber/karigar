@@ -26,11 +26,11 @@ const Edit_worker = () => {
 
   const updateFieldAPI = async (field, value) => {
     const apiMap = {
-      fullName: "/api/v1/worker/update-fullName",
-      email: "/api/v1/worker/update-email",
-      phone: "/api/v1/worker/update-phone",
-      address: "/api/v1/worker/update-address",
-      profilePhoto: "/api/v1/worker/update-profile-photo",
+      fullName: "http://localhost:8000/api/v1/worker/update-fullName",
+      email: "http://localhost:8000/api/v1/worker/update-email",
+      phone: "http://localhost:8000/api/v1/worker/update-phone",
+      address: "http://localhost:8000/api/v1/worker/update-address",
+      profilePhoto: "http://localhost:8000/api/v1/worker/update-profile-photo",
     };
 
     try {
@@ -46,6 +46,7 @@ const Edit_worker = () => {
         });
 
         setProfilePhoto(data.data.profilePhoto);
+        console.log(data.data);
         alert("Profile photo updated successfully!");
       } else {
         await axios.patch(apiMap[field], { [field]: value }, { withCredentials: true });

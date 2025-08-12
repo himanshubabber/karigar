@@ -8,7 +8,7 @@ import customerRouter from "./src/routes/customer.route.js";
 import workerRouter from "./src/routes/worker.route.js";
 import serviceRequestRouter from "./src/routes/serviceRequest.route.js";
 import paymentRouter from "./src/routes/payment.route.js";
-
+import { ApiError } from "./src/utils/ApiError.js";
 
 dotenv.config();
 
@@ -18,19 +18,34 @@ const app = express();
 await connectDB();
 
 // CORS setup
-const allowedOrigins = [
+/*const allowedOrigins = [
   process.env.CORS_ORIGIN ||
-   "http://localhost:5173" || 
-   "https://karigar-mu.vercel.app" 
-   || "http://localhost:5174",
+    "http://localhost:5173" || 
+    "https://karigar-mu.vercel.app" 
+    || "http://localhost:5174",*/
   // hello
   // Add any additional frontend URLs here
-];
+//];
 
 
+// app.use(cors({
+//   origin: "http://localhost:5173",
+//   credentials: true,
+//   methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+//   allowedHeaders: ["Content-Type", "Authorization"]
+// }));
 
 
+app.use(cors({
+  origin: 'http://localhost:5173',
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true, 
+}));
 
+//  app.options("*", cors());
+
+/*
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -43,7 +58,7 @@ const corsOptions = {
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 };
 
-app.use(cors(corsOptions));
+app.use(cors(corsOptions));*/
 
 
 // Middleware
@@ -59,5 +74,26 @@ app.use("/api/v1/customer", customerRouter);
 app.use("/api/v1/worker", workerRouter);
 app.use("/api/v1/payment", paymentRouter);
 app.use("/api/v1/serviceRequest", serviceRequestRouter);
+
+app.use((err, req, res, next) => {
+  if (err instanceof ApiError) {
+    return res.status(err.statusCode).json({
+      success: false,
+      statusCode: err.statusCode,
+      message: err.message,
+      errors: err.errors || [],
+    });
+  }
+
+  console.error(err);
+
+  return res.status(500).json({
+    success: false,
+    statusCode: 500,
+    message: "Internal Server Error",
+    errors: [],
+  });
+});
+
 
 export default app;

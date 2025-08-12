@@ -22,7 +22,9 @@ const serviceRequestSchema = new mongoose.Schema(
         "fridge",
         "ac",
         "washing-machine",
-        "laptop"
+        "laptop",
+        "carpenter",
+        "painter",
       ],
       required: true,
     },
@@ -46,6 +48,7 @@ const serviceRequestSchema = new mongoose.Schema(
         "cancelled",
         "accepted",
         "rejected",
+        "completed",
       ],
       default: "searching",
     },
@@ -95,7 +98,7 @@ const serviceRequestSchema = new mongoose.Schema(
     cancelledAt: Date,
     cancelledBy: {
       type: String,
-      enum: ["customer", "technician", "system"],
+      enum: ["customer", "worker", "system"],
       default: null,
     },
     cancellationReason: {

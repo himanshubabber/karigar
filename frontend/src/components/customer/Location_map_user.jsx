@@ -13,6 +13,7 @@ import "leaflet-routing-machine";
 import "leaflet-routing-machine/dist/leaflet-routing-machine.css";
 import "leaflet-defaulticon-compatibility";
 import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css";
+import Feedback from "./Feedback.jsx";
 import { IoIosInformationCircle } from "react-icons/io";
 import { CgProfile } from "react-icons/cg";
 import { FaHammer, FaStar } from "react-icons/fa6";
@@ -46,6 +47,53 @@ const manIcon = L.icon({
   popupAnchor: [0, -30],
 });
 
+function getBearingAndDistance(from, to) {
+  const toRad = (deg) => (deg * Math.PI) / 180;
+  const toDeg = (rad) => (rad * 180) / Math.PI;
+
+  const [lat1, lon1] = from;
+  const [lat2, lon2] = to;
+
+  const φ1 = toRad(lat1);
+  const φ2 = toRad(lat2);
+  const Δφ = toRad(lat2 - lat1);
+  const Δλ = toRad(lon2 - lon1);
+
+  const R = 6371000; // meters
+  const a =
+    Math.sin(Δφ / 2) ** 2 +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const d = R * c;
+
+  if (d < 10) {
+    return {
+      distance: 0,
+      distanceText: "0 m",
+      bearing: 0,
+      time: 0,
+    };
+  }
+
+  const y = Math.sin(Δλ) * Math.cos(φ2);
+  const x =
+    Math.cos(φ1) * Math.sin(φ2) -
+    Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+  let brng = toDeg(Math.atan2(y, x));
+  brng = (brng + 360) % 360;
+
+  const estimatedTimeMin = Math.round(d / 70);
+
+  const distanceText = d >= 1000 ? `${(d / 1000).toFixed(2)} km` : `${Math.round(d)} m`;
+
+  return {
+    distance: Math.round(d),
+    distanceText,
+    bearing: Math.round(brng),
+    time: estimatedTimeMin,
+  };
+}
+
 const Location_map_user = () => {
   const { customer,token,setCustomer } = useCustomer();
   const { worker, setWorker } = useWorker();
@@ -56,6 +104,12 @@ const Location_map_user = () => {
   const [userPosition, setUserPosition] = useState(null);
   const [showCancelOptions, setShowCancelOptions] = useState(false);
   const [track, setTrack] = useState(false);
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+  const [verifyText, setVerifyText] = useState("");
+  const [verifyError, setVerifyError] = useState(null);
+  const [verifyDone, setVerifyDone] = useState(false);
+  const [textSubmitted,setTextSubmitted]=useState(false);
+
 
   const serviceRequestId = ser?._id || localStorage.getItem("serviceRequestId");
   const navigate = useNavigate();
@@ -63,7 +117,7 @@ const Location_map_user = () => {
   useEffect(() => {
     if (serviceRequestId) {
       axios
-        .post("https://karigarbackend.vercel.app/api/v1/serviceRequest/get-service-details", { serviceRequestId })
+        .post("http://localhost:8000/api/v1/serviceRequest/get-service-details", { serviceRequestId })
         .then((response) => {
           const resData = response.data?.data;
           const {
@@ -97,13 +151,15 @@ const Location_map_user = () => {
       watchId = navigator.geolocation.watchPosition(
         (pos) => setUserPosition([pos.coords.latitude, pos.coords.longitude]),
         (err) => alert("Location error: " + err.message),
-        { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
+        { enableHighAccuracy: true, maximumAge: 10000, timeout: 50000 }
       );
     }
     return () => {
       if (watchId) navigator.geolocation.clearWatch(watchId);
     };
   }, [track]);
+
+  
 
   const handle_notproceed = () => {
     navigate("/customer");
@@ -126,60 +182,71 @@ const Location_map_user = () => {
       return;
     }
 
-   
-   
-  
     try {
       console.log({serviceRequestId})
       const { data } = await axios.post(
-        {
-          serviceRequestId: ser._id,
-          Authorization: `Bearer ${token}`,
-           // sending in body
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          withCredentials: true,
+         `http://localhost:8000/api/v1/payment/${serviceRequestId}/create-order`,
+         {
+          amount: ser.visitingCharge+ser.quoteAmount, 
+          currency: "INR"
         }
   
       );
 
       setOtpShow(true)
       const options = {
-        key: rzp_test_4RSGtzPekc2oSp, // <- ✅ Use VITE_ prefixed env var
+        key: "rzp_test_4RSGtzPekc2oSp", // <- ✅ Use VITE_ prefixed env var
         order_id: data.data.id,
         ...data.data,
         handler: async function (response) {
           const options = {
-            razorpayPaymentId: response.razorpay_payment_id,
-            razorpayOrderId: response.razorpay_order_id,
-            razorpaySignature: response.razorpay_signature,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_signature: response.razorpay_signature,
           };
           try {
-            await axios.post(`
-              https://karigarbackend.vercel.app/api/v1/payment/${serviceRequestId}/verify-payment`, options);
+            await axios.post(
+              `http://localhost:8000/api/v1/payment/${serviceRequestId}/verify-payment`, options);
             alert("Payment successful!");
           } catch {
             alert("Payment verification failed.");
           }
         },
       };
-
+      await axios.post(
+        "http://localhost:8000/api/v1/serviceRequest/update-job-status",
+        { serviceRequestId, newStatus: "accepted" },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       const rzp = new window.Razorpay(options);
+      console.log("Order created:", rzp);
       rzp.open();
     } catch (err) {
       console.error("Payment error:", err);
-      alert("Failed to initiate payment.");
+      alert("Failed to initiate payment");
     }
   };
 
-  const workerCoords = worker?.workerLocation?.coordinates?.length === 2
+  // const workerCoords = worker?.workerLocation?.coordinates?.length === 2
+  //   ? [worker.workerLocation.coordinates[1], worker.workerLocation.coordinates[0]]
+  //   : null;
+  const workerCoords = ser?.orderStatus === "cancelled" 
+  ? null 
+  : (worker?.workerLocation?.coordinates?.length === 2
     ? [worker.workerLocation.coordinates[1], worker.workerLocation.coordinates[0]]
-    : null;
+    : null);
 
   const destination = workerCoords;
+
+  const distanceInfo = userPosition && destination
+  ? getBearingAndDistance(userPosition, destination)
+  : null;
+   {console.log("user pos",userPosition)}
+   {console.log("dest pos",destination)}
 
   useEffect(() => {
     if (!userPosition && customer?.workerLocation?.coordinates?.length === 2) {
@@ -190,13 +257,13 @@ const Location_map_user = () => {
     }
   }, [customer, userPosition]);
 
-  function Routing({ from }) {
+  function Routing({ from, to }) {
     const map = useMap();
-    if ( !map) return;
     useEffect(() => {
-      if (!from) return;
+      if (!map || !from || !to) return;
+  
       const control = L.Routing.control({
-        waypoints: [L.latLng(from), L.latLng(destination)],
+        waypoints: [L.latLng(from), L.latLng(to)],
         lineOptions: { styles: [{ color: "blue", weight: 5 }] },
         show: false,
         addWaypoints: false,
@@ -204,18 +271,23 @@ const Location_map_user = () => {
         fitSelectedRoutes: true,
         createMarker: () => null,
       }).addTo(map);
-      return () => map.removeControl(control);
-    }, [from, map]);
+  
+      return () => {
+        if (map && control) {
+          map.removeControl(control);
+        }
+      };
+    }, [map, from, to]);
+  
     return null;
   }
-
   console.log(ser)
 
   const handleOnPayment = async () => {
     console.log(token);
     try {
       const response = await axios.put(
-        "https://karigarbackend.vercel.app/api/v1/serviceRequest/mark-payment",
+        "http://localhost:8000/api/v1/serviceRequest/mark-payment",
         {
           serviceRequestId: ser._id,
           Authorization: `Bearer ${token}`,
@@ -237,6 +309,25 @@ const Location_map_user = () => {
     }
   };
   // service status show logic 
+
+  const updateJobStatus = async (serviceRequestId, newStatus, token) => {
+    try {
+      const response = await axios.post(
+        "http://localhost:8000/api/v1/serviceRequest/update-job-status",
+        { serviceRequestId, newStatus },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      return response.data; 
+    } catch (error) {
+      console.error("Failed to update job status:", error.response?.data || error.message);
+      throw error;
+    }
+  };
+
 
   const statusMap = [
     "searching",
@@ -262,7 +353,88 @@ const Location_map_user = () => {
   
   const currentStatusIndex = statusMap.indexOf(ser?.orderStatus);
   console.log(otp?.otp);
+
+  const [hasArrived, setHasArrived] = useState(false);
   
+useEffect(() => {
+  console.log(distanceInfo);
+  if (
+    distanceInfo && 
+    distanceInfo.distance <= 30 && 
+    !hasArrived && 
+    ser.orderStatus === "connected"
+  ) {
+    updateJobStatus(ser._id, "arrived", token)
+      .then((updatedData) => {
+        setHasArrived(true);
+        updateSelectedReq(updatedData.data);
+      })
+      .catch(console.error);
+  }
+}, [distanceInfo, hasArrived, ser.orderStatus]);
+
+  // {console.log("distance is:",distanceInfo.distance)}
+  {console.log('order status:',ser?.orderStatus)}
+  {console.log('verify text:',verifyText)}
+
+  useEffect(() => {
+    if (verifyText.trim().toLowerCase() === "yes" && !verifyDone && textSubmitted) {
+      (async () => {
+        try {
+          const updatedData = await updateJobStatus(serviceRequestId, "verified", token);
+          updateSelectedReq(updatedData.data || updatedData);
+          setVerifyDone(true);
+          setVerifyError(null);
+
+        } catch (err) {
+          console.error(err);
+          setVerifyError("Failed to verify issue. Please try again.");
+        }
+      })();
+    }
+  }, [verifyText, verifyDone, serviceRequestId, token, updateSelectedReq]);
+  
+  const handleVerifySubmit = async () => {
+    if (verifyText.trim().toLowerCase() !== "yes") {
+      setVerifyError("Please type 'yes' to verify.");
+      return;
+    }
+    try {
+      
+      const updatedData = await updateJobStatus(serviceRequestId, "verified", token);
+      updateSelectedReq(updatedData.data || updatedData);
+      setVerifyDone(true);
+      setVerifyError(null);
+      setTextSubmitted(true)
+    } catch (err) {
+      console.error(err);
+      setVerifyError("Failed to verify issue. Please try again.");
+    }
+  };
+
+  const handleWorkerNotResponding = async () => {
+    try {
+      const res = await axios.post(
+        `http://localhost:8000/api/v1/serviceRequest/${serviceRequestId}/cancelled-by-customer-as-worker-not-responding-or-late`,
+        {}, 
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      alert(res.data.message || "Cancelled: Worker not responding");
+      navigate("/customer");
+    } catch (err) {
+      const message =
+        err.response?.data?.message ||
+        err.message ||
+        "Error cancelling request";
+        //console.log(message);
+      alert(message);
+      console.error("Error cancelling request:", err);
+    }
+  };
+
+
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "20px" }}>
       <div style={{ width: "80%", maxWidth: "1200px" }}>
@@ -305,7 +477,155 @@ ser.orderStatus !== ''
             <p><FaHammer /> <b>Category:</b> {ser?.category || "N/A"}</p>
             <p><MdOutlineDescription /> <b>Description:</b> {ser?.description || "N/A"}</p>
             <p><MdNetworkWifi /> <b>Job Status:</b> {ser?.jobStatus || "N/A"}</p>
-            <div className="card p-3 mb-4" style={{ width: "100%" }}>
+
+            {/* service map */}
+            
+            <p><RiMoneyDollarCircleFill /> <b>Payment:</b> {ser?.paymentStatus || "N/A"}</p>
+            <p><AiTwotoneAudio /> <b>Audio Note:</b></p>
+            {ser?.audioNoteUrl ? (
+              <audio controls src={ser.audioNoteUrl} className="w-100 mt-2" />
+            ) : (
+              <p className="text-muted">No audio note provided.</p>
+            )}
+          </div>
+
+          {/* Cancel & Payment */}
+          <div className="card p-4 text-center" style={{ flex: "1", minWidth: "280px" }}>
+
+
+          {ser.orderStatus === "cancelled" && (
+  <div className="alert alert-danger text-center mt-3">
+    <strong>Cancelled by: </strong> {ser.cancelledBy === "worker"
+      ? "Worker"
+      : ser.cancelledBy === "customer"
+      ? "Customer"
+      : ser.cancelledBy === "system"
+      ? "System"
+      : "Unknown"}
+  </div>
+)}
+
+            {/* issue verified */}
+
+        <div style={{ marginBottom: "1rem" }}>
+        { ser.orderStatus !== "cancelled" && ser?.paymentStatus!=="paid" && 
+        ser?.orderStatus==="arrived" && <p
+    style={{
+      fontWeight: "700",
+      marginBottom: "0.5rem",
+      fontSize: "1.3rem",
+    }}
+  >
+    Issue Verified?
+  </p>}
+
+  {((verifyDone || ser.orderStatus === "verified" || ser.orderStatus === "completed")&& !verifyError && ser.orderStatus !== "cancelled" ) ? (
+    <div style={{ color: "green", fontWeight: "600" }}>✅ Issue verified!</div>
+  ) : (
+    ser?.paymentStatus!=="paid" && ser?.orderStatus==="arrived" &&(
+    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+      <input
+        type="text"
+        value={verifyText}
+        onChange={(e) => {
+          setVerifyText(e.target.value);
+          if (verifyError) setVerifyError(null); // Clear error on input change
+        }}
+        placeholder="Type yes"
+        style={{ padding: "0.4rem", fontSize: "1rem", flexGrow: 1 }}
+      />
+      <button
+        onClick={handleVerifySubmit}
+        disabled={verifyText.trim().toLowerCase() !== "yes"}
+        style={{
+          backgroundColor:
+            verifyText.trim().toLowerCase() === "yes" ? "#007bff" : "#ccc",
+          color: "white",
+          border: "none",
+          padding: "0.5rem 1rem",
+          cursor:
+            verifyText.trim().toLowerCase() === "yes" ? "pointer" : "not-allowed",
+          fontWeight: "600",
+        }}
+      >
+        Submit
+      </button>
+    </div>
+    )
+  )}
+
+  {verifyError && (
+    <div style={{ color: "red", marginTop: "0.3rem", fontSize: "0.9rem" }}>
+      {verifyError}
+    </div>
+  )}
+</div>
+
+
+            {ser.orderStatus!=="completed" && typeof ser?.quoteAmount === "number" && <div>
+            <h5>total amount: {
+ser.visitingCharge+ser.quoteAmount}</h5>
+            
+            <button className="btn btn-primary mb-2"
+             onClick={handlePayment }
+            >Pay to Start</button>
+            {otpShow && <h4>OTP Sent to Registered Mobile No.</h4>}
+            {/* <div>{otp?.otp}</div> */}
+            </div>
+}
+           {/* <h4>OTP: {otp?.otp || "N/A"}</h4> */}
+           {ser.orderStatus !== "completed" && ser.orderStatus!=="cancelled" ? (
+  !showCancelOptions ? (
+    <button className="btn btn-danger mt-3" onClick={() => setShowCancelOptions(true)}>
+      Cancel
+    </button>
+  ) : (
+    <div className="d-flex flex-column gap-2 mt-2">
+      {/* <button className="btn btn-warning" onClick={handle_notproceed}>Don't want t procees</button> */}
+      <button onClick={handleWorkerNotResponding}
+      className="btn btn-warning">Worker not responding</button>
+    </div>
+  )
+) :  (
+  (<div className="text-center mt-3">
+   {ser.orderStatus!=="cancelled" && <div className="alert alert-success">
+      ✅ Your service request has been successfully completed.
+    </div> }
+
+    <div className="container mt-4 text-center">
+      {!feedbackSubmitted ? (
+        <Feedback 
+        serviceRequestId={serviceRequestId}
+        onSubmit={() => setFeedbackSubmitted(true)} />
+      ) : (
+        <div>
+          <h5 className="text-success mb-3">✅ Thanks for your feedback!</h5>
+          <button
+            className="btn btn-primary"
+            onClick={() => navigate("/customer")}
+          >
+            Go to Profile
+          </button>
+        </div>
+      )}
+
+    </div>
+
+     
+  </div>
+  )
+)}
+     {/* {  ser?.orderStatus==='cancelled' &&  <button
+            className="btn btn-primary"
+            onClick={() => navigate("/customer")}
+          >
+            Go to Profile
+          </button>} */}
+<p></p>
+
+
+{/* service map */}
+<div className="card p-3 mb-4" style={{ width: "100%" }}>
   <h5 className="mb-3">Service Progress</h5>
   <div className="d-flex flex-column gap-2">
     {statusMap.map((step, idx) => (
@@ -323,64 +643,22 @@ ser.orderStatus !== ''
     ))}
   </div>
 </div>
-            <p><RiMoneyDollarCircleFill /> <b>Payment:</b> {ser?.paymentStatus || "N/A"}</p>
-            <p><AiTwotoneAudio /> <b>Audio Note:</b></p>
-            {ser?.audioNoteUrl ? (
-              <audio controls src={ser.audioNoteUrl} className="w-100 mt-2" />
-            ) : (
-              <p className="text-muted">No audio note provided.</p>
-            )}
-          </div>
-
-          {/* Cancel & Payment */}
-          <div className="card p-4 text-center" style={{ flex: "1", minWidth: "280px" }}>
-
-            {ser.orderStatus!=="completed" && typeof ser?.quoteAmount === "number" && <div>
-            <h5>total amount: {
-ser.visitingCharge+ser.quoteAmount}</h5>
-            
-            <button className="btn btn-primary mb-2"
-             onClick={handleOnPayment }
-            >Pay to Start</button>
-            {otpShow && <h4>OTP: {otp?.otp || "N/A"}</h4>}
-            <div>{otp?.otp}</div>
-            </div>
-}
-           {/* <h4>OTP: {otp?.otp || "N/A"}</h4> */}
-           {ser.orderStatus !== "completed" ? (
-  !showCancelOptions ? (
-    <button className="btn btn-danger mt-3" onClick={() => setShowCancelOptions(true)}>
-      Cancel
-    </button>
-  ) : (
-    <div className="d-flex flex-column gap-2 mt-2">
-      <button className="btn btn-warning" onClick={handle_notproceed}>Don't want to proceed</button>
-      <button className="btn btn-secondary">Worker not responding</button>
-    </div>
-  )
-) : (
-  <div className="text-center mt-3">
-    <div className="alert alert-success">
-      ✅ Your service request has been successfully completed.
-    </div>
-    <button
-      className="btn btn-primary mt-2"
-      onClick={() => navigate("/customer")} // or "/profile" if that's your profile route
-    >
-      Go to Profile
-    </button>
-  </div>
-)}
           </div>
 
           {/* Worker Info */}
           <div className="card p-4" style={{ flex: "1", minWidth: "280px" }}>
             <h4>Worker Info</h4>
             <p><CgProfile /> <b>Name:</b> {worker?.fullName || "N/A"}</p>
-            <p><FaStar /> <b>Rating:</b> {worker?.rating || "N/A"}</p>
+            <p>
+  <FaStar /> <b>Rating:</b> {typeof worker?.rating === "number" ? worker.rating.toFixed(2) : "N/A"}
+</p>
             <p><MdOutlineAccessTimeFilled /> <b>Experience:</b> {worker?.yearOfExperience || "N/A"} yrs</p>
             <p><MdVerifiedUser /> <b>Verified:</b> {worker?.isVerified ? "✅ Yes" : "❌ No"}</p>
-            <p><b>Status:</b> {worker?.isOnline ? "🟢 Online" : "🔴 Offline"}</p>
+            <p><b>Status:</b> {worker?.workerLocation ? "🟢 Online" : "🔴 Offline"}</p>
+           {
+           console.log("worker coord",worker?.workerLocation
+           )
+           }
             <div className="d-flex flex-wrap gap-2 mt-2">
               {worker?.workingCategory?.map((cat, idx) => (
                 <span

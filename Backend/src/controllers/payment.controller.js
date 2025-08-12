@@ -19,15 +19,14 @@ const createOrder = asyncHandler(async (req, res) => {
   if (!serviceRequestId) {
     throw new ApiError(400, "Service Request ID is required");
   }
+  const { amount, currency = "INR" } = req.body;
 
   const serviceRequest = await ServiceRequest.findById(serviceRequestId);
   if (!serviceRequest) {
     throw new ApiError(404, "Service Request not found");
   }
 
-  let amount;
-  let currency = "INR"; // Default currency
-
+  
   if (serviceRequest.paymentStatus !== "pending") {
     throw new Error("Invalid order status for payment");
   }
@@ -85,90 +84,93 @@ const createOrderForWorker = asyncHandler(async (req, res) => {
 });
 
 const verifyPayment = asyncHandler(async (req, res) => {
-  const { razorpayPaymentId, razorpayOrderId, razorpaySignature } = req.body;
+  const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
+
   const { serviceRequestId } = req.params;
   if (!serviceRequestId) {
     throw new ApiError(400, "Service Request ID is required");
   }
 
-  if (!razorpayPaymentId || !razorpayOrderId || !razorpaySignature) {
+  // Check the same variables that were destructured above
+  if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
     throw new ApiError(400, "Razorpay payment details are required");
   }
 
+  // Use the same snake_case variables here
   const generatedSignature = crypto
     .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-    .update(`${razorpayOrderId}|${razorpayPaymentId}`)
+    .update(`${razorpay_order_id}|${razorpay_payment_id}`)
     .digest("hex");
 
-  if (generatedSignature !== razorpaySignature) {
+  if (generatedSignature !== razorpay_signature) {
     throw new ApiError(400, "Invalid payment signature");
   }
 
   const serviceRequest = await ServiceRequest.findById(serviceRequestId);
-    if (!serviceRequest) {
-        throw new ApiError(404, "Service Request not found");
-    }
-
-    const worker = await Worker.findById(serviceRequest.workerId);
-    if (!worker) { 
-        throw new ApiError(404, "Worker not found");
-    }
-
-  let amount;
-  if (serviceRequest.orderStatus === "payment_pending_quote_amount") {
-    amount = serviceRequest.quoteAmount;
-  } else if (serviceRequest.orderStatus === "payment_pending_visiting_fee") {
-    amount = serviceRequest.visitingCharge;
-  }else {
-    throw new ApiError(400, "Invalid order status for payment");
+  if (!serviceRequest) {
+    throw new ApiError(404, "Service Request not found");
   }
 
+  const worker = await Worker.findById(serviceRequest.workerId);
+  if (!worker) {
+    throw new ApiError(404, "Worker not found");
+  }
 
-  serviceRequest.jobStatus = "completed";
-  serviceRequest.orderStatus = "completed";
+  let amount;
+  amount=serviceRequest.quoteAmount+serviceRequest.visitingCharge;
+
+  // serviceRequest.jobStatus = "completed";
+  // serviceRequest.orderStatus = "completed";
   serviceRequest.paymentStatus = "paid";
   serviceRequest.paymentType = "online";
   serviceRequest.paidAt = new Date();
   await serviceRequest.save();
 
-    if (!amount) {
-        throw new ApiError(400, "Amount is required for payment verification");
-    }   
-    worker.walletBalance += parseFloat(amount);
-    await worker.save();
-    await worker.deductPlatformFee();
-    
+  if (!amount) {
+    throw new ApiError(400, "Amount is required for payment verification");
+  }
+  worker.walletBalance += parseFloat(amount);
+  const platformFeeAmount = serviceRequest.quoteAmount * 0.05;
+  worker.walletBalance -= platformFeeAmount;
 
-    const transactionCredit = await Transaction.create({
-        workerId: worker._id,
-        amount: parseFloat(amount),
-        type: "credit",
-        description: `Payment received for service request ${serviceRequestId}`,
-        platformFee: false,
-        serviceRequestId: serviceRequest._id,
-    })
-    if (!transactionCredit) {
-        throw new ApiError(500, "Failed to record credit transaction");
-    }
+  
+  
+  await worker.save();
+  await worker.deductPlatformFee();
 
-    const transactionDebit = await Transaction.create({
-        workerId: worker._id,
-        amount: platformCharge,
-        type: "debit",
-        description: `Platform fee for service request ${serviceRequestId}`,
-        platformFee: true,
-        serviceRequestId: serviceRequest._id,
-    })
+  const transactionCredit = await Transaction.create({
+    workerId: worker._id,
+    amount: parseFloat(amount),
+    type: "credit",
+    description: `Payment received for service request ${serviceRequestId}`,
+    platformFee: false,
+    serviceRequestId: serviceRequest._id,
+  });
 
-    if (!transactionDebit) {
-        throw new ApiError(500, "Failed to record debit transaction");
-    }
-       
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(200, { transactionCredit, transactionDebit }, "Payment verified successfully")
-    );
+  if (!transactionCredit) {
+    throw new ApiError(500, "Failed to record credit transaction");
+  }
+
+  const transactionDebit = await Transaction.create({
+    workerId: worker._id,
+    amount: platformCharge,
+    type: "debit",
+    description: `Platform fee for service request ${serviceRequestId}`,
+    platformFee: true,
+    serviceRequestId: serviceRequest._id,
+  });
+
+  if (!transactionDebit) {
+    throw new ApiError(500, "Failed to record debit transaction");
+  }
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      { transactionCredit, transactionDebit },
+      "Payment verified successfully"
+    )
+  );
 });
 
 const verifyPaymentForWorker = asyncHandler(async (req, res) => {
@@ -232,7 +234,7 @@ const paymentReceivedByCash = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Service Request not found");
   }
 
-  serviceRequest.jobStatus = "completed";
+  // serviceRequest.jobStatus = "completed";
   serviceRequest.orderStatus = "completed";
   serviceRequest.paymentStatus = "paid";
   serviceRequest.paymentType = "cash";

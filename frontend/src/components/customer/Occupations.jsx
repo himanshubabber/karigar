@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useCustomer } from "../../Context/Customer_context";
 import { MdOutlineEdit } from "react-icons/md";
 import { FiLogOut } from "react-icons/fi";
+import { useEffect } from "react";
 
 const occupations = [
   { title: 'Plumber', image: 'https://5.imimg.com/data5/SELLER/Default/2023/4/301270031/RO/MJ/HW/55834732/plumber-service.jpg' },
@@ -11,6 +12,10 @@ const occupations = [
   { title: 'Painter', image: 'https://alis.alberta.ca/media/697574/painter-and-decorator-istock-174536787.jpg' },
   { title: 'AC Repair', image: 'https://3.imimg.com/data3/BH/SR/MY-8941393/split-ac-service-500x500.jpg' },
   { title: 'Washing Machine', image: 'https://clareservices.com/wp-content/uploads/2023/02/washing-machine-service-in-delhi.jpg' },
+  { title: 'TV Repair', image: 'https://thumbs.dreamstime.com/b/professional-repair-engineer-repairing-broken-tv-177532491.jpg' },
+  { title: 'Laptop Repair', image: 'https://5.imimg.com/data5/SELLER/Default/2022/11/YB/TZ/IK/135789645/laptop-repairing-services.jpg' },
+  { title: 'Fridge Repair', image: 'https://www.keyvendors.com/public/images/ckeditor/1666422390_refrigerator-repair-service-in-delhi.webp' },
+
 ];
 
 const Occupations = () => {
@@ -22,6 +27,12 @@ const Occupations = () => {
     localStorage.removeItem("karigar_customer");
     navigate("/signin_customer");
   };
+
+  useEffect(() => {
+    if (!customer || !customer.fullName) {
+      navigate("/signin_customer");
+    }
+  }, [customer, navigate]);
 
   return (
     <div className="container my-5">
@@ -99,24 +110,61 @@ const Occupations = () => {
      
 
       {/* Services */}
-      <h2 className="text-center mb-4 fw-bold">Our Services</h2>
+      <h2 className="text-center mb-4 text-dark"
+      style={{ 
+        fontWeight: "bold",             
+        fontSize: "2.2rem",              
+        letterSpacing: "0.5px",          
+      }}
+      >Our Services</h2>
       <div className="row g-4 justify-content-center">
         {occupations.map((occ, i) => (
           <div className="col-6 col-md-4 col-lg-3" key={i}>
-            <div className="card h-100 shadow-sm">
+            <div
+              className="card h-100 occupation-card"
+              style={{
+                backgroundColor: "#fff",
+                border: "1px solid #000",
+                color: "#000",
+                borderRadius: "7px",
+                overflow: "hidden",
+                transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                cursor: "pointer",
+              }}
+              onClick={() => navigate("/signin_customer")} // example click action
+            >
               <img
                 src={occ.image}
                 className="card-img-top"
                 alt={occ.title}
-                style={{ height: '180px', objectFit: 'cover' }}
+                style={{ height: "180px", objectFit: "cover" }}
               />
-              <div className="card-body text-center">
-                <h5 className="card-title">{occ.title}</h5>
+              <div className="card-body text-center"
+              >
+                <h5 className="card-title"
+                 style={{
+                  fontWeight: "bold",
+                  fontSize: "1.2rem",
+                }}>{occ.title}</h5>
               </div>
             </div>
           </div>
         ))}
       </div>
+      
+      {/* Custom CSS */}
+      <style>{`
+
+        .occupation-card:hover {
+          transform: translateY(-5px);
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .occupation-card:active {
+          transform: scale(0.97);
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+      `}</style>
     </div>
   );
 };

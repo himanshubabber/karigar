@@ -1,6 +1,8 @@
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import Spinner from "../../components/Style/Spinner.jsx";
+
 
 const Signup_worker = () => {
   const navigate = useNavigate();
@@ -17,6 +19,7 @@ const Signup_worker = () => {
 
   const [profilePhoto, setProfilePhoto] = useState(null);
   const [previewPhoto, setPreviewPhoto] = useState(null);
+  const [loading,setLoading]= useState(false);
 
   const categories = [
     "Plumber",
@@ -99,8 +102,8 @@ const Signup_worker = () => {
       if (profilePhoto) {
         formData.append("profilePhoto", profilePhoto);
       }
-
-      const res = await axios.post("https://karigarbackend.vercel.app/api/v1/worker/register", formData, {
+      setLoading(true);
+      const res = await axios.post("http://localhost:8000/api/v1/worker/register", formData, {
         withCredentials: true,
         headers: {
           "Content-Type": "multipart/form-data",
@@ -112,6 +115,9 @@ const Signup_worker = () => {
     } catch (err) {
       console.error(err);
       alert("Signup failed: " + (err.response?.data?.message || err.message));
+    }
+    finally{
+      setLoading(false)
     }
   };
 
@@ -210,6 +216,7 @@ const Signup_worker = () => {
           </button>
         </form>
       </div>
+      {loading && <Spinner/>}
     </div>
   );
 };

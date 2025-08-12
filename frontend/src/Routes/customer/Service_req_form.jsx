@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useServiceReq } from "../../Context/Service_req_context.jsx";
 import { useOtp } from "../../Context/Otp_context.jsx";
 import { useCustomer } from "../../Context/Customer_context.jsx"; // ✅ Import token from context
+import Spinner from "../../components/Style/Spinner.jsx";
 
 const categories = [
   "plumber", "electrician", "carpenter", "painter",
@@ -28,6 +29,7 @@ const Service_req_form = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [finalDuration, setFinalDuration] = useState(null);
+  const [loading,setLoading]= useState(false);
 
   const recordingIntervalRef = useRef(null);
 
@@ -134,9 +136,10 @@ const Service_req_form = () => {
         );
         audioNoteUrlStr = uploadRes.data.secure_url;
       }
+      setLoading(true);
 
       const res = await axios.post(
-        "https://karigarbackend.vercel.app/api/v1/serviceRequest/create",
+        "http://localhost:8000/api/v1/serviceRequest/create",
         {
           category: toTitleCase(category),
           description,
@@ -162,7 +165,7 @@ const Service_req_form = () => {
       localStorage.setItem("serviceRequestId", serviceRequestId);
 
       const otpRes = await axios.post(
-        "https://karigarbackend.vercel.app/api/v1/customer/generate-otp",
+        "http://localhost:8000/api/v1/customer/generate-otp",
         { serviceRequestId },
         {
           headers: {
@@ -180,6 +183,9 @@ const Service_req_form = () => {
     } catch (err) {
       console.error(err);
       alert("Failed: " + (err.response?.data?.message || err.message));
+    }
+    finally{
+      setLoading(false);
     }
   };
 
@@ -224,7 +230,8 @@ const Service_req_form = () => {
             <label className="form-label fw-semibold">Audio Note (optional)</label>
 
             {!isRecording && !audioBlob && (
-              <button type="button" className="btn btn-secondary w-100 mb-2" onClick={handleStartRecording}>
+              <button type="button" className="btn text-white" style={{ backgroundColor: "orange" }}
+              onClick={handleStartRecording}>
                 🎙️ Start Recording
               </button>
             )}
@@ -242,9 +249,13 @@ const Service_req_form = () => {
               <>
                 <audio controls src={URL.createObjectURL(audioBlob)} className="w-100 mt-2 mb-2" />
                 <div className="d-grid gap-2">
-                  <button type="button" className="btn btn-outline-warning" onClick={handleResetRecording}>
-                    🔁 Re-record
-                  </button>
+                <button
+                  type="button"
+               className="btn btn-warning text-white"
+                onClick={handleResetRecording}
+                 >
+                  🔁 Re-record
+                </button>
                 </div>
                 <div className="text-muted small text-center mt-1">
                   ⏱️ Duration: {finalDuration} seconds
@@ -256,18 +267,24 @@ const Service_req_form = () => {
           {/* Location */}
           <div className="mb-3">
             <label className="form-label fw-semibold">Location *</label>
-            <button type="button" className="btn btn-outline-success mb-2" onClick={handleUseLocation}>
+            <button type="button" className=
+            "btn btn-success text-white mb-2" onClick={handleUseLocation}>
               Use Current Location
             </button>
             {locationText && <div className="text-muted small">{locationText}</div>}
           </div>
 
           {/* Submit */}
-          <button type="submit" className="btn btn-primary w-100">
-            Submit Request
+          <button
+            type="submit"
+           className="btn btn-primary w-50 mx-auto d-block fw-bold py-3"
+           style={{ fontWeight: "700" }} 
+          >
+         Submit Request
           </button>
         </form>
       </div>
+      {loading && <Spinner/>}
     </div>
   );
 };

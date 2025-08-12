@@ -60,6 +60,8 @@ const workerSchema = new mongoose.Schema(
             "ac",
             "washing-machine",
             "laptop",
+            "carpenter",
+            "painter"
           ],
         },
       ],
@@ -81,6 +83,10 @@ const workerSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    cancelCount:{
+     type:Number,
+     default:0,
+    },
     suspendedUntil: {
       type: Date,
       default: null,
@@ -92,6 +98,10 @@ const workerSchema = new mongoose.Schema(
     rating:{
       type:Number,
       default:null,
+    },
+    ratingCount:{
+      type:Number,
+      default:0
     },
     // ratingsCount: {
     //   type: Number,

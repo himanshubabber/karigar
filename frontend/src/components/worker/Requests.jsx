@@ -9,10 +9,15 @@ const Requests = () => {
   useEffect(() => {
     const fetchRequests = async () => {
       try {
-        const res = await axios.get("https://karigarbackend.vercel.app/api/v1/serviceRequest/find-requests", {
+        const res = await axios.get("http://localhost:8000/api/v1/serviceRequest/find-requests", {
           withCredentials: true,
         });
-        updateAllRequests(res.data.data);
+        
+        const sortedRequests = [...res.data.data].sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        );
+  
+        updateAllRequests(sortedRequests);
       } catch (err) {
         console.error("Failed to fetch requests:", err);
       }
@@ -22,12 +27,16 @@ const Requests = () => {
   }, [updateAllRequests]);
 
   return (
-    <div className="container mt-4">
-      <h3 className="mb-4">Service Requests</h3>
+    <div className="container mt-4 d-flex flex-column align-items-center">
+      <h3 className="mb-4 text-center">Service Requests</h3>
       {serviceReqs.length === 0 ? (
         <p>No requests available</p>
       ) : (
-        serviceReqs.map((req) => <Request key={req._id} request={req} />)
+        <div className="w-100" style={{ maxWidth: "900px", margin: "0 auto" , marginLeft: "350px"}}>
+        {serviceReqs.map((req) => (
+          <Request key={req._id} request={req} />
+        ))}
+      </div>
       )}
     </div>
   );

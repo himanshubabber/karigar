@@ -33,7 +33,7 @@ const Header = () => {
     <header className="bg-white shadow-sm border-bottom sticky-top z-3">
       <div className="container-fluid py-2 px-3 d-flex flex-wrap align-items-center justify-content-between">
         {/* Logo */}
-        <a
+        <span
   href="/"
   className="d-flex align-items-center text-decoration-none"
   style={{
@@ -43,14 +43,6 @@ const Header = () => {
     letterSpacing: '1.5px',
     textShadow: '2px 2px 4px rgba(0,0,0,0.25)',
     transition: 'all 0.3s ease',
-  }}
-  onMouseEnter={e => {
-    e.currentTarget.style.color = '#fd7e14';
-    e.currentTarget.querySelector('i').style.color = '#fd7e14';
-  }}
-  onMouseLeave={e => {
-    e.currentTarget.style.color = '#0d6efd';
-    e.currentTarget.querySelector('i').style.color = '#0d6efd';
   }}
 >
   <i
@@ -62,7 +54,7 @@ const Header = () => {
     }}
   ></i>
   Karigar
-</a>
+</span>
 
         {/* Main Navigation */}
         <ul className="nav gap-3 my-2 my-md-0">

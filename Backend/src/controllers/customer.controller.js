@@ -2,20 +2,19 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { Customer } from "../models/customer.model.js";
+import {uploadOnCloudinary} from "../utils/cloudinary.js"
 import { Otp } from "../models/otp.model.js";
+import { ServiceRequest } from "../models/serviceRequest.model.js";
 import jwt from "jsonwebtoken";
+import twilio from "twilio";
 
 const generateAccessAndRefreshTokens = async (customerId) => {
-  try {
-    const customer = await Customer.findById(customerId);
-    const accessToken = customer.generateAccessToken();
-    const refreshToken = customer.generateRefreshToken();
-    customer.refreshToken = refreshToken;
-    await customer.save({ validateBeforeSave: false });
-    return { accessToken, refreshToken };
-  } catch (error) {
-    throw new ApiError(500, "Failed to generate tokens");
-  }
+  const customer = await Customer.findById(customerId);
+  const accessToken = customer.generateAccessToken();
+  const refreshToken = customer.generateRefreshToken();
+  customer.refreshToken = refreshToken;
+  await customer.save({ validateBeforeSave: false });
+  return { accessToken, refreshToken };
 };
 
 const registerCustomer = asyncHandler(async (req, res) => {
@@ -30,7 +29,11 @@ const registerCustomer = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Customer with this email already exists");
   }
 
-  const profilePhoto = req.file ? `/temp/${req.file.filename}` : "";
+  let profilePhoto;
+  if (req.file?.path) {
+    const uploadResult = await uploadOnCloudinary(req.file.path);
+    profilePhoto = uploadResult.secure_url;
+  }
 
   const customer = await Customer.create({
     fullName,
@@ -43,13 +46,7 @@ const registerCustomer = asyncHandler(async (req, res) => {
 
   const createdCustomer = await Customer.findById(customer._id).select("-password -refreshToken");
 
-  if (!createdCustomer) {
-    throw new ApiError(500, "Customer creation failed");
-  }
-
-  return res.status(201).json(
-    new ApiResponse(201, createdCustomer, "Customer registered successfully")
-  );
+  return res.status(201).json(new ApiResponse(201, createdCustomer, "Customer registered successfully"));
 });
 
 const loginCustomer = asyncHandler(async (req, res) => {
@@ -73,31 +70,39 @@ const loginCustomer = asyncHandler(async (req, res) => {
 
   const loggedInCustomer = await Customer.findById(customer._id).select("-password -refreshToken");
 
-  const options = { httpOnly: true, secure: true, sameSite: "None" };
+  // Cookie options
+  const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite:process.env.NODE_ENV === "production" ? "None" : "Lax",  // use 'Lax' or 'Strict' if not using cross-site cookies
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  };
 
   return res
-    .cookie("refreshToken", refreshToken, options)
-    .cookie("accessToken", accessToken, options)
+    .cookie("accessToken", accessToken, cookieOptions)
+    .cookie("refreshToken", refreshToken, cookieOptions)
     .status(200)
     .json(
-      new ApiResponse(200, {
-        customer: loggedInCustomer,
-        accessToken,
-        refreshToken,
-      }, "Customer logged in successfully")
+      new ApiResponse(200, { customer: loggedInCustomer, accessToken, refreshToken }, "Customer logged in successfully")
     );
 });
 
 const logoutCustomer = asyncHandler(async (req, res) => {
-  await Customer.findByIdAndUpdate(req.customer._id, { $unset: { refreshToken: 1 } });
+  if (req.customer?._id) {
+    await Customer.findByIdAndUpdate(req.customer._id, { $unset: { refreshToken: 1 } });
+  }
 
-  const options = { httpOnly: true, secure: true };
+  const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "None",
+  };
 
   return res
+    .clearCookie("accessToken", cookieOptions)
+    .clearCookie("refreshToken", cookieOptions)
     .status(200)
-    .clearCookie("accessToken", options)
-    .clearCookie("refreshToken", options)
-    .json(new ApiResponse(200, {}, "User logged Out"));
+    .json(new ApiResponse(200, {}, "User logged out successfully"));
 });
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
@@ -115,14 +120,23 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       throw new ApiError(401, "Invalid or expired refresh token");
     }
 
+    // Generate new tokens and update refreshToken in DB
     const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(customer._id);
 
-    const options = { httpOnly: true, secure: true };
+    // Cookie options with NODE_ENV check
+    const isProd = process.env.NODE_ENV === "production";
+    const cookieOptions = {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? "None" : "Lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: "/",
+    };
 
     return res
       .status(200)
-      .cookie("accessToken", accessToken, options)
-      .cookie("refreshToken", refreshToken, options)
+      .cookie("accessToken", accessToken, cookieOptions)
+      .cookie("refreshToken", refreshToken, cookieOptions)
       .json(new ApiResponse(200, { accessToken, refreshToken }, "Access token refreshed"));
   } catch (err) {
     throw new ApiError(401, err?.message || "Invalid token");
@@ -150,26 +164,30 @@ const getCurrentCustomer = asyncHandler(async (req, res) => {
 });
 
 const updateProfilePhoto = asyncHandler(async (req, res) => {
-  const customerId = req.customer?._id;
+  const profilePhotoLocalPath = req.file?.path;
 
-  if (!req.file) {
+  if (!profilePhotoLocalPath) {
     throw new ApiError(400, "Profile Photo file is missing");
   }
 
-  const fullUrl = `${req.protocol}://${req.get("host")}/temp/${req.file.filename}`;
+  const profilePhotoData = await uploadOnCloudinary(profilePhotoLocalPath);
 
-  const updatedCustomer = await Customer.findByIdAndUpdate(
-    customerId,
-    { profilePhoto: fullUrl },
+  if (!profilePhotoData?.secure_url) {
+    throw new ApiError(400, "Error while uploading Profile Photo");
+  }
+
+  const customer = await Customer.findByIdAndUpdate(
+    req.customer?._id,
+    {
+      $set: {
+        profilePhoto: profilePhotoData.secure_url,
+      },
+    },
     { new: true }
   ).select("-password -refreshToken");
 
-  if (!updatedCustomer) {
-    throw new ApiError(404, "Customer not found");
-  }
-
   return res.status(200).json(
-    new ApiResponse(200, updatedCustomer, "Profile photo updated successfully")
+    new ApiResponse(200, customer, "Profile Photo updated successfully")
   );
 });
 
@@ -225,10 +243,70 @@ const updateFullName = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, customer, "Full name updated successfully"));
 });
 
+
+// otp functionality
+
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+const twilioClient = twilio(accountSid, authToken);
+
 const generateotp = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
+const generateOtpobj = asyncHandler(async (req, res) => {
+  const { serviceRequestId } = req.body;
+  if (!serviceRequestId) {
+    return res.status(400).json({ message: "serviceRequestId is required" });
+  }
+
+  const serviceRequest = await ServiceRequest.findById(serviceRequestId);
+  if (!serviceRequest) {
+    return res.status(404).json({ message: "Service Request not found" });
+  }
+
+  const customer = await Customer.findById(serviceRequest.customerId);
+  if (!customer) {
+    return res.status(404).json({ message: "Customer not found for this service request" });
+  }
+  console.log(customer)
+
+  let phoneNumber = customer.phone;
+  if (!phoneNumber) {
+    return res.status(400).json({ message: "Customer phone number is missing or invalid" });
+  }
+
+  const otp = generateotp();
+  const ONE_LAKH_SECONDS = 100000;
+  const expiresAt = new Date(Date.now() + ONE_LAKH_SECONDS * 1000);
+
+  await Otp.findOneAndUpdate(
+    { serviceRequestId },
+    { otp, expiresAt, verified: false },
+    { new: true, upsert: true, setDefaultsOnInsert: true }
+  );
+   console.log(otp)
+   if (!phoneNumber.startsWith('+')) {
+    phoneNumber = '+91' + phoneNumber;
+  }
+  try {
+    await twilioClient.messages.create({
+      body: `Your OTP code for Karigar is: ${otp}`,
+      from: process.env.TWILIO_PHONE_NUMBER,
+      to: phoneNumber,
+    });
+
+    return res.status(200).json({
+      message: "OTP generated and sent successfully",
+      otp,
+    });
+  } catch (error) {
+    console.error("Twilio SMS send error:", error);
+    return res.status(500).json({ message: "Failed to send OTP SMS" });
+  }
+});
+
+/*
 const generateOtpobj = asyncHandler(async (req, res) => {
   const { serviceRequestId } = req.body;
 
@@ -237,7 +315,8 @@ const generateOtpobj = asyncHandler(async (req, res) => {
   }
 
   const otp = generateotp();
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+  const ONE_LAKH_SECONDS = 100000;
+  const expiresAt = new Date(Date.now() + ONE_LAKH_SECONDS * 1000);
 
   const updatedOtp = await Otp.findOneAndUpdate(
     { serviceRequestId },
@@ -249,11 +328,11 @@ const generateOtpobj = asyncHandler(async (req, res) => {
     message: "OTP generated successfully",
     otp,
   });
-});
+});*/
 
 const getCustomerById = asyncHandler(async (req, res) => {
   const customer = await Customer.findById(req.body.id).select("fullName email phone");
-  if (!worker) throw new ApiError(404, "customer not found");
+  if (!customer) throw new ApiError(404, "customer not found");
   res.status(200).json(new ApiResponse(200, customer, "customer fetched"));
 });
 

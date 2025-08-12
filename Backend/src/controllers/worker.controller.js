@@ -22,16 +22,20 @@ const generateAccessAndRefreshTokens = async(workerId)=>{
 }
 
 const registerWorker = asyncHandler(async (req, res) => {
-    const { fullName, email, password, phone, address, workingCategory, yearOfExperience} = req.body;
+    let { fullName, email, password, phone, address, workingCategory, yearOfExperience} = req.body;
 
     if (!fullName || !email || !password || !phone || !address || !workingCategory || !yearOfExperience) {
         throw new ApiError(400, "All fields are required");
     }
-
+    console.log(workingCategory)
     // Ensure workingCategory is an array
-    if (!Array.isArray(workingCategory)) {
-        throw new ApiError(400, "WorkingCategory must be an array");
-    }
+     if (!Array.isArray(workingCategory)) {
+        workingCategory = workingCategory ? [workingCategory] : [];
+      }
+
+      if (workingCategory.length === 0) {
+        throw new ApiError(400, "WorkingCategory must have at least one item");
+      }
 
     // Optional: Validate each category is valid
     const validCategories = [
@@ -86,128 +90,117 @@ const registerWorker = asyncHandler(async (req, res) => {
 })
 
 const loginWorker = asyncHandler(async (req, res) => {
-
     const { email, password } = req.body;
-    if(!email){
-        throw new ApiError(400, "Email is required");
-    }
-    if(!password){
-        throw new ApiError(400, "Password is required");
-    }
-
-    const worker = await Worker.findOne({email})
-
-    if(!worker){
-        throw new ApiError(404, "Worker does not exist");
-    }
-
+    if (!email) throw new ApiError(400, "Email is required");
+    if (!password) throw new ApiError(400, "Password is required");
+  
+    const worker = await Worker.findOne({ email });
+    if (!worker) throw new ApiError(404, "Worker does not exist");
+  
     const isPasswordCorrect = await worker.isPasswordCorrect(password);
-    if(!isPasswordCorrect){
-        throw new ApiError(400, "Incorrect password");
-    }
-
+    if (!isPasswordCorrect) throw new ApiError(400, "Incorrect password");
+  
     const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(worker._id);
-
+  
     const loggedInWorker = await Worker.findById(worker._id).select("-password -refreshToken");
-
-    const options={
-        httpOnly: true,
-        secure: true,
-    }
-
+  
+    const isProd = process.env.NODE_ENV === "production";
+    const cookieOptions = {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? "None" : "Lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: "/",
+    };
+  
     return res
-        .cookie("refreshToken", refreshToken, options)
-        .cookie("accessToken", accessToken, options)
-        .status(200)
-        .json(
-            new ApiResponse(
-                200,
-                {
-                    worker:loggedInWorker,
-                    refreshToken,
-                    accessToken
-                }, 
-                "Worker logged in successfully"
-            )
+      .cookie("refreshToken", refreshToken, cookieOptions)
+      .cookie("accessToken", accessToken, cookieOptions)
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          {
+            worker: loggedInWorker,
+            refreshToken,
+            accessToken,
+          },
+          "Worker logged in successfully"
         )
-})
-
-const logoutWorker = asyncHandler(async(req, res) => {
+      );
+  });
+  
+  const logoutWorker = asyncHandler(async (req, res) => {
     await Worker.findByIdAndUpdate(
-        req.worker._id,
-        {
-            $unset: {
-                refreshToken: 1 
-            }
+      req.worker._id,
+      {
+        $unset: {
+          refreshToken: 1,
         },
-        {
-            new: true
-        }
-    )
-
-    const options = {
-        httpOnly: true,
-        secure: true
-    }
-
+      },
+      {
+        new: true,
+      }
+    );
+  
+    const isProd = process.env.NODE_ENV === "production";
+    const cookieOptions = {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? "None" : "Lax",
+      path: "/",
+    };
+  
     return res
-    .status(200)
-    .clearCookie("accessToken", options)
-    .clearCookie("refreshToken", options)
-    .json(new ApiResponse(200, {}, "Worker logged out successfully"))
-})
-
-const refreshAccessToken = asyncHandler(async (req, res) => {
-    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
-
+      .clearCookie("accessToken", cookieOptions)
+      .clearCookie("refreshToken", cookieOptions)
+      .status(200)
+      .json(new ApiResponse(200, {}, "Worker logged out successfully"));
+  });
+  
+  const refreshAccessToken = asyncHandler(async (req, res) => {
+    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken;
+  
     if (!incomingRefreshToken) {
-        throw new ApiError(401, "Unauthorized request")
+      throw new ApiError(401, "Unauthorized request");
     }
-
+  
     try {
-        const decodedToken = jwt.verify(
-            incomingRefreshToken,
-            process.env.REFRESH_TOKEN_SECRET
-        )
-    
-        const worker = await Worker.findById(decodedToken?._id)
-    
-        if (!worker) {
-            throw new ApiError(401, "Invalid refresh token")
-        }
-    
-        if (incomingRefreshToken !== worker?.refreshToken) {
-            throw new ApiError(401, "Refresh token is expired or used") //ud....................
-        }
-    
-        const options = {
-            httpOnly: true,
-            secure: true
-        }
-    
-        const {accessToken, refreshToken} = await generateAccessAndRefreshTokens(worker._id)
-    
-        return res
+      const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
+  
+      const worker = await Worker.findById(decodedToken?._id);
+  
+      if (!worker) {
+        throw new ApiError(401, "Invalid refresh token");
+      }
+  
+      if (incomingRefreshToken !== worker?.refreshToken) {
+        throw new ApiError(401, "Refresh token is expired or used");
+      }
+  
+      const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(worker._id);
+  
+      const isProd = process.env.NODE_ENV === "production";
+      const cookieOptions = {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: isProd ? "None" : "Lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        path: "/",
+      };
+  
+      return res
         .status(200)
-        .cookie("accessToken", accessToken, options)
-        .cookie("refreshToken", refreshToken, options)
-        .json(
-            new ApiResponse(
-                200, 
-                {accessToken, refreshToken},
-                "Access token refreshed"
-            )
-        )
+        .cookie("accessToken", accessToken, cookieOptions)
+        .cookie("refreshToken", refreshToken, cookieOptions)
+        .json(new ApiResponse(200, { accessToken, refreshToken }, "Access token refreshed"));
     } catch (error) {
-        throw new ApiError(401, error?.message || "Invalid refresh token")
+      throw new ApiError(401, error?.message || "Invalid refresh token");
     }
-
-})
-
+  });
+  
 const changeCurrentPassword = asyncHandler(async(req, res) => {
     const {oldPassword, newPassword} = req.body
-
-    
 
     const worker = await Worker.findById(req.worker?._id)
     const isPasswordCorrect = await worker.isPasswordCorrect(oldPassword)
@@ -263,30 +256,36 @@ const updateCategory= asyncHandler(async(req,res)=>{
       .json(new ApiResponse(200, worker, "Category added successfully"));
 })
 
+
+
 const updateProfilePhoto = asyncHandler(async (req, res) => {
-    const workerId = req.worker?._id;
-  
-    if (!req.file) {
-      throw new ApiError(400, "Profile Photo file is missing");
-    }
-  
-    const fullUrl = `${req.protocol}://${req.get("host")}/temp/${req.file.filename}`;
-  
-    const updatedWorker = await Worker.findByIdAndUpdate(
-      workerId,
-      { profilePhoto: fullUrl },
-      { new: true }
-    ).select("-password -refreshToken");
-  
-    if (!updatedWorker) {
-      throw new ApiError(404, "Worker not found");
-    }
-  
-    return res.status(200).json(
-      new ApiResponse(200, updatedWorker, "Profile photo updated successfully")
-    );
-  });
-  
+  const workerId = req.worker?._id;
+
+  if (!req.file) {
+    throw new ApiError(400, "Profile Photo file is missing");
+  }
+   console.log(req.file.path)
+  const uploadedPhoto = await uploadOnCloudinary(req.file.path);
+  if (!uploadedPhoto) {
+    throw new ApiError(500, "Photo upload failed");
+  }
+  console.log("uploadedphoto is",uploadedPhoto)
+
+  const updatedWorker = await Worker.findByIdAndUpdate(
+    workerId,
+    { profilePhoto: uploadedPhoto.secure_url },
+    { new: true }
+  ).select("-password -refreshToken");
+
+  if (!updatedWorker) {
+    throw new ApiError(404, "Worker not found");
+  }
+
+  return res.status(200).json(
+    new ApiResponse(200, updatedWorker, "Profile photo updated successfully")
+  );
+});
+
 
 const updateEmail = asyncHandler(async(req, res) => {
     const {email} = req.body
@@ -441,11 +440,62 @@ const updateWorkerLocation = asyncHandler(async (req, res) => {
 };
 
 const getWorkerById = asyncHandler(async (req, res) => {
-    const worker = await Worker.findById(req.body.id).select("fullName email phone");
+    const worker = await Worker.findById(req.body._id)
+    // console.log(worker);
     if (!worker) throw new ApiError(404, "Worker not found");
     res.status(200).json(new ApiResponse(200, worker, "Worker fetched"));
   });
+
+const rateWorker= asyncHandler(async (req,res)=>{
+    const { serviceRequestId, rating } = req.body;
+
+    if (!serviceRequestId || !rating) {
+      throw new ApiError(400, "serviceRequestId and rating are required");
+    }
   
+    if (rating < 1 || rating > 5) {
+      throw new ApiError(400, "Rating must be between 1 and 5");
+    }
+  
+    const serviceRequest = await ServiceRequest.findById(serviceRequestId);
+    if (!serviceRequest) {
+      throw new ApiError(404, "Service request not found");
+    }
+  
+    if (serviceRequest.workerRated) {
+      throw new ApiError(400, "Worker already rated for this service request");
+    }
+  
+    const workerId = serviceRequest.workerId;
+    if (!workerId) {
+      throw new ApiError(400, "Worker not assigned to this service request");
+    }
+  
+    // Update service request rating
+    serviceRequest.workerRated = true;
+    serviceRequest.ratedWith = rating;
+    await serviceRequest.save();
+  
+    // Update worker's rating
+    const worker = await Worker.findById(workerId);
+    if (!worker) {
+      throw new ApiError(404, "Worker not found");
+    }
+  
+    const currentRating = worker.rating || 0;
+    const currentCount = worker.ratingCount || 0;
+    const newCount = currentCount + 1;
+    const newRating = (currentRating * currentCount + rating) / newCount;
+  
+    worker.rating = newRating;
+    worker.ratingCount = newCount;
+  
+    await worker.save();
+  
+    res.status(200).json(new ApiResponse(200, { serviceRequest, worker }, "Rating submitted successfully"));
+})
+
+
 export{
     registerWorker,
     loginWorker,
@@ -462,4 +512,5 @@ export{
     updateWorkerLocation,
     verifyOtpForService,
     getWorkerById,
+    rateWorker,
 }

@@ -40,11 +40,32 @@ const Header_worker = ({ isOnline }) => {
   return (
     <header className="bg-white shadow-sm border-bottom">
       <div className="container-fluid d-flex align-items-center py-2 px-2">
-        <a href="/" className="d-flex align-items-center text-dark text-decoration-none me-auto">
+        <a href="/" className="d-flex align-items-center text-blue text-decoration-none me-auto">
           <svg className="me-1" width="36" height="32" role="img" aria-label="Bootstrap">
             <use xlinkHref="#bootstrap" />
           </svg>
-          <span className="fs-3 fw-bold">Karigar</span>
+          <span
+  href="/"
+  className="d-flex align-items-center text-decoration-none"
+  style={{
+    fontSize: '1.9rem',
+    fontWeight: '900',
+    color: '#0d6efd',
+    letterSpacing: '1.5px',
+    textShadow: '2px 2px 4px rgba(0,0,0,0.25)',
+    transition: 'all 0.3s ease',
+  }}
+>
+  <i
+    className="bi bi-tools me-2"
+    style={{
+      fontSize: '1.8rem',
+      fontWeight: 'bold',
+      transition: 'color 0.3s ease',
+    }}
+  ></i>
+  Karigar
+</span>
         </a>
 
         {/* Show All Requests only if Online */}

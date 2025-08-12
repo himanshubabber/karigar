@@ -5,13 +5,70 @@ import { IoIosInformationCircle } from "react-icons/io";
 import { FiLogOut } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useState } from "react";
 
 const Worker_middle = ({ isOnline, setIsOnline, worker }) => {
   const navigate = useNavigate();
+  const [NewWorker,SetNewWorker]=useState(worker);
 
+
+  const [suspended, setSuspended] = useState(false);
+
+  useEffect(() => {
+    if (NewWorker === null) return; // wait for data to load
+    if (!NewWorker?.fullName) {
+      navigate("/signin");
+    }
+  }, [NewWorker, navigate]);
+
+  useEffect(() => {
+    if (NewWorker?.suspendedUntil) {
+      const now = new Date();
+      const suspendUntilDate = new Date(NewWorker.suspendedUntil);
+      if (suspendUntilDate > now) {
+        setSuspended(true);
+        setIsOnline(false); 
+      } else {
+        setSuspended(false);
+      }
+    } else {
+      setSuspended(false);
+    }
+  }, [NewWorker, setIsOnline]);
+  
+   
   const toggleOnlineStatus = () => {
+    if (suspended) {
+      alert(
+        `You are suspended until ${new Date(NewWorker.suspendUntil).toLocaleString()}. You cannot go online.`
+      );
+      return;
+    }
     setIsOnline((prev) => !prev);
   };
+
+
+  useEffect(() => {
+    const fetchWorkerInfo = async () => {
+      try {
+        const workerId = worker?._id;
+        if (!workerId) {
+          console.error("No worker ID found in localStorage");
+          return;
+        }
+        const res = await axios.post(
+          "http://localhost:8000/api/v1/worker/worker-info",
+          { _id: workerId }
+        );
+        SetNewWorker(res.data.data);
+      } catch (err) {
+        console.error("Failed to fetch worker info:", err);
+      }
+    };
+
+    fetchWorkerInfo();
+  });
+  
 
   useEffect(() => {
     if (isOnline) {
@@ -20,7 +77,7 @@ const Worker_middle = ({ isOnline, setIsOnline, worker }) => {
           const { latitude, longitude } = pos.coords;
           console.log(pos);
           try {
-            await axios.post("/api/v1/worker/update-location", {
+            await axios.post("http://localhost:8000/api/v1/worker/update-location", {
               coordinates: [longitude, latitude],
             },
             { withCredentials: true },
@@ -42,7 +99,7 @@ const Worker_middle = ({ isOnline, setIsOnline, worker }) => {
 
   const handleLogout = async () => {
     try {
-      const res = await axios.post("https://karigarbackend.vercel.app/api/v1/worker/logout", null, {
+      const res = await axios.post("http://localhost:8000/api/v1/worker/logout", null, {
         withCredentials: true,
       });
 
@@ -61,7 +118,9 @@ const Worker_middle = ({ isOnline, setIsOnline, worker }) => {
   };
   
 
-  if (!worker) {
+  //  console.log("new worker",NewWorker);
+
+  if (!NewWorker) {
     return (
       <div className="container text-center mt-5">
         <h4>Loading worker data...</h4>
@@ -89,7 +148,7 @@ const Worker_middle = ({ isOnline, setIsOnline, worker }) => {
                 className="mt-2"
                 style={{ cursor: "pointer", color: "#343a40" }}
                 title="Edit Profile"
-                onClick={() => navigate("/edit_worker", { state: worker })}
+                onClick={() => navigate("/edit_worker", { state: NewWorker })}
               />
             </div>
 
@@ -106,7 +165,7 @@ const Worker_middle = ({ isOnline, setIsOnline, worker }) => {
               >
                 <img
                   src={
-                    worker.profilePhoto ||
+                    NewWorker?.profilePhoto ||
                     "https://thumbs.dreamstime.com/b/profile-picture-caucasian-male-employee-posing-office-happy-young-worker-look-camera-workplace-headshot-portrait-smiling-190186649.jpg"
                   }
                   alt="Profile"
@@ -114,10 +173,10 @@ const Worker_middle = ({ isOnline, setIsOnline, worker }) => {
                 />
               </div>
               <div>
-                <h3 className="fw-bold mb-2">{worker.fullName}</h3>
-                <p className="text-muted fs-5 mb-1">{worker.email}</p>
-                <p className="text-muted fs-5 mb-1">{worker.phone}</p>
-                <p className="text-muted fs-5 mb-0">{worker.address}</p>
+                <h3 className="fw-bold mb-2">{NewWorker.fullName}</h3>
+                <p className="text-muted fs-5 mb-1">{NewWorker.email}</p>
+                <p className="text-muted fs-5 mb-1">{NewWorker.phone}</p>
+                <p className="text-muted fs-5 mb-0">{NewWorker.address}</p>
               </div>
             </div>
 
@@ -127,13 +186,17 @@ const Worker_middle = ({ isOnline, setIsOnline, worker }) => {
               <button
                 onClick={toggleOnlineStatus}
                 className="btn fw-bold"
+                disabled={suspended}
                 style={{
                   borderRadius: "20px",
                   padding: "6px 16px",
                   backgroundColor: isOnline ? "#dc3545" : "#198754",
                   color: "#fff",
                   border: `2px solid ${isOnline ? "#dc3545" : "#198754"}`,
+                  opacity: suspended ? 0.6 : 1,
+                  cursor: suspended ? "not-allowed" : "pointer",
                 }}
+                title={suspended ? "You cannot go online while suspended" : ""}
               >
                 {isOnline ? "Go Offline" : "Go Online"}
               </button>
@@ -141,7 +204,7 @@ const Worker_middle = ({ isOnline, setIsOnline, worker }) => {
 
             {/* Categories */}
             <div className="d-flex flex-wrap gap-2 mb-4">
-              {worker.workingCategory?.map((cat, idx) => (
+              {NewWorker.workingCategory?.map((cat, idx) => (
                 <span
                   key={idx}
                   className="badge bg-primary text-light"
@@ -186,7 +249,7 @@ const Worker_middle = ({ isOnline, setIsOnline, worker }) => {
               <h4 className="fw-bold mb-3 fs-4">
                 <FaWallet size={26} className="me-2 text-black" /> Wallet
               </h4>
-              <p className="fs-2 fw-bold text-success mb-0">₹ {worker.walletBalance || 0}</p>
+              <p className="fs-2 fw-bold text-success mb-0">₹ {NewWorker.walletBalance || 0}</p>
             </div>
           </div>
 
@@ -197,23 +260,25 @@ const Worker_middle = ({ isOnline, setIsOnline, worker }) => {
                 Worker Info
               </h4>
               <p className="fs-5 mb-2">
-                <strong>
-                  <FaStar className="me-2 text-warning" /> Rating:
-                </strong>{" "}
-                {worker.rating || "N/A"}
-              </p>
+  <strong>
+    <FaStar className="me-2 text-warning" /> Rating:
+  </strong>{" "}
+  {NewWorker.rating !== undefined && NewWorker.rating !== null
+    ? Number(NewWorker.rating).toFixed(2)
+    : "N/A"}
+</p>
               <p className="fs-5 mb-2">
                 <strong>
                   <FaCalendarAlt className="me-2 text-black" /> Experience:
                 </strong>{" "}
-                {worker.yearOfExperience || 0} yrs
+                {NewWorker.yearOfExperience || 0} yrs
               </p>
               <p className="fs-5">
                 <strong>
                   <MdVerifiedUser className="me-2 text-black" /> Verified:
                 </strong>{" "}
-                <span className={worker.isVerified ? "text-success" : "text-danger"}>
-                  {worker.isVerified ? "✅ Yes" : "❌ No"}
+                <span className={NewWorker.isVerified ? "text-success" : "text-danger"}>
+                  {NewWorker.isVerified ? "✅ Yes" : "❌ No"}
                 </span>
               </p>
             </div>

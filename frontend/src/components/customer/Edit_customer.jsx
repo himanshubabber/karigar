@@ -26,11 +26,11 @@ const Edit_customer = () => {
 
   const updateFieldAPI = async (field, value) => {
     const apiMap = {
-      fullName: "/api/v1/customer/update-fullName",
-      email: "/api/v1/customer/update-email",
-      phone: "/api/v1/customer/update-phone",
-      address: "/api/v1/customer/update-address",
-      profilePhoto: "/api/v1/customer/update-profile-photo",
+      fullName: "http://localhost:8000/api/v1/customer/update-fullName",
+      email: "http://localhost:8000/api/v1/customer/update-email",
+      phone: "http://localhost:8000/api/v1/customer/update-phone",
+      address: "http://localhost:8000/api/v1/customer/update-address",
+      profilePhoto: "http://localhost:8000/api/v1/customer/update-profile-photo",
     };
 
     try {
@@ -46,7 +46,7 @@ const Edit_customer = () => {
         });
 
         setCustomer(data.data);
-        localStorage.setItem("karigar_customer", JSON.stringify(data.data));
+       // localStorage.setItem("karigar_customer", JSON.stringify(data.data));
         setProfilePhoto(data.data.profilePhoto);
         alert("Profile photo updated successfully!");
       } else {

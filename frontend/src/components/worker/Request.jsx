@@ -2,11 +2,14 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useServiceReq } from "../../Context/Service_req_context";
 import axios from "axios";
+import { FaMapMarkerAlt, FaUser, FaWrench, FaRupeeSign } from "react-icons/fa";
+import Spinner from "../../components/Style/Spinner.jsx"
 
 const Request = ({ request }) => {
   const navigate = useNavigate();
   const { updateSelectedReq } = useServiceReq();
   const [accepted, setAccepted] = useState(false);
+  const [loading,setLoading]=useState(false);
 
   const {
     _id,
@@ -26,15 +29,13 @@ const Request = ({ request }) => {
       alert("Geolocation not supported by your browser");
       return;
     }
-
+   setLoading(true);
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
-        console.log("Captured worker location:", [longitude, latitude]);
         try {
-          // Accept the request
           await axios.post(
-            "https://karigarbackend.vercel.app/api/v1/serviceRequest/accept",
+            "http://localhost:8000/api/v1/serviceRequest/accept",
             { 
               serviceRequestId: _id,
               coordinates: [longitude, latitude],
@@ -42,20 +43,15 @@ const Request = ({ request }) => {
             { withCredentials: true }
           );
 
-          // Fetch full service request details
           const fullDetails = await axios.post(
-            "https://karigarbackend.vercel.app/api/v1/serviceRequest/get-service-details",
+            "http://localhost:8000/api/v1/serviceRequest/get-service-details",
             { serviceRequestId: _id },
             { withCredentials: true }
           );
-         
-          const fetchedRequest = fullDetails?.data?.data?.serviceRequest;
-          console.log(fetchedRequest)
 
-          // Save in context
+          const fetchedRequest = fullDetails?.data?.data?.serviceRequest;
           updateSelectedReq(fetchedRequest);
 
-          // Save in local storage
           localStorage.setItem("serviceRequestId", _id);
           localStorage.setItem("serviceRequestData", JSON.stringify(fetchedRequest));
 
@@ -65,22 +61,28 @@ const Request = ({ request }) => {
           console.error("Accept error:", err);
           alert("Failed to accept the request.");
         }
+        finally{
+          setLoading(false);
+        }
       },
       (err) => {
         console.error("Location error:", err);
         alert("Location access denied or failed.");
       }
+     
     );
   };
 
   return (
-    <div className="card shadow-sm mb-4 p-3" style={{ borderRadius: "12px" }}>
-      <h5 className="fw-bold text-capitalize mb-2">{category.toLowerCase()}</h5>
+    <div className="card shadow-sm mb-4 p-3" style={{ borderRadius: "12px", maxWidth: "400px" }}>
+      <h5 className="fw-bold text-capitalize mb-2 d-flex align-items-center">
+        <FaWrench className="me-2 text-primary" /> {category.toLowerCase()}
+      </h5>
 
-      <p><strong>Customer:</strong> {customerId?.fullName || "Unknown"}</p>
-      <p><strong>Location:</strong> {customerLocation?.coordinates?.join(", ")}</p>
+      <p><FaUser className="me-2" /> <strong>Customer:</strong> {customerId?.fullName || "Unknown"}</p>
+      <p><FaMapMarkerAlt className="me-2 text-danger" /> <strong>Location:</strong> {customerLocation?.address || "Unknown location"}</p>
       <p><strong>Issue:</strong> {description}</p>
-      <p><strong>Visiting Charge:</strong> ₹{visitingCharge}</p>
+      <p><FaRupeeSign className="me-2 text-success" /> <strong>Visiting Charge:</strong> ₹{visitingCharge}</p>
       <p><strong>Status:</strong> {orderStatus} | {jobStatus}</p>
       <p><strong>Created:</strong> {new Date(createdAt).toLocaleString()}</p>
 
@@ -92,14 +94,19 @@ const Request = ({ request }) => {
       )}
 
       {!accepted ? (
-        <button className="btn btn-success mt-3" onClick={handleAccept}>
+        <button 
+          className="btn btn-success mt-3 px-4 py-1" 
+          style={{ width: "auto" }} 
+          onClick={handleAccept}
+        >
           Accept
         </button>
       ) : (
-        <button className="btn btn-primary mt-3" disabled>
+        <button className="btn btn-primary mt-3 px-4 py-1" disabled>
           Accepted
         </button>
       )}
+      {loading && <Spinner/>}
     </div>
   );
 };
