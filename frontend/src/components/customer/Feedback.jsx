@@ -20,7 +20,7 @@ const Feedback = ({ serviceRequestId, onSubmit }) => {
     setError(null);
 
     try {
-      await axios.post("/api/v1/worker/rate", {
+      await axios.post("https://karigarbackend.vercel.app/api/v1/worker/rate", {
         serviceRequestId,
         rating,
       });

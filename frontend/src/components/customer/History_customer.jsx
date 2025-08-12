@@ -13,7 +13,7 @@ const History_customer = () => {
   // Fetch service request history
   const fetchCustomerHistory = async () => {
     try {
-      const { data } = await axios.get("http://localhost:8000/api/v1/serviceRequest/history", {
+      const { data } = await axios.get("https://karigarbackend.vercel.app/api/v1/serviceRequest/history", {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
@@ -40,7 +40,7 @@ const History_customer = () => {
 
         try {
           const { data } = await axios.post(
-            "http://localhost:8000/api/v1/worker/worker-info",
+            "https://karigarbackend.vercel.app/api/v1/worker/worker-info",
             { id: id },
           );
           newWorkerInfoMap[id] = data?.data;

@@ -117,7 +117,7 @@ const Location_map_user = () => {
   useEffect(() => {
     if (serviceRequestId) {
       axios
-        .post("http://localhost:8000/api/v1/serviceRequest/get-service-details", { serviceRequestId })
+        .post("https://karigarbackend.vercel.app/api/v1/serviceRequest/get-service-details", { serviceRequestId })
         .then((response) => {
           const resData = response.data?.data;
           const {
@@ -185,7 +185,7 @@ const Location_map_user = () => {
     try {
       console.log({serviceRequestId})
       const { data } = await axios.post(
-         `http://localhost:8000/api/v1/payment/${serviceRequestId}/create-order`,
+         `https://karigarbackend.vercel.app/api/v1/payment/${serviceRequestId}/create-order`,
          {
           amount: ser.visitingCharge+ser.quoteAmount, 
           currency: "INR"
@@ -206,7 +206,7 @@ const Location_map_user = () => {
           };
           try {
             await axios.post(
-              `http://localhost:8000/api/v1/payment/${serviceRequestId}/verify-payment`, options);
+              `https://karigarbackend.vercel.app/api/v1/payment/${serviceRequestId}/verify-payment`, options);
             alert("Payment successful!");
           } catch {
             alert("Payment verification failed.");
@@ -214,7 +214,7 @@ const Location_map_user = () => {
         },
       };
       await axios.post(
-        "http://localhost:8000/api/v1/serviceRequest/update-job-status",
+        "https://karigarbackend.vercel.app/api/v1/serviceRequest/update-job-status",
         { serviceRequestId, newStatus: "accepted" },
         {
           headers: {
@@ -313,7 +313,7 @@ const Location_map_user = () => {
   const updateJobStatus = async (serviceRequestId, newStatus, token) => {
     try {
       const response = await axios.post(
-        "http://localhost:8000/api/v1/serviceRequest/update-job-status",
+        "https://karigarbackend.vercel.app/api/v1/serviceRequest/update-job-status",
         { serviceRequestId, newStatus },
         {
           headers: {
@@ -415,7 +415,7 @@ useEffect(() => {
   const handleWorkerNotResponding = async () => {
     try {
       const res = await axios.post(
-        `http://localhost:8000/api/v1/serviceRequest/${serviceRequestId}/cancelled-by-customer-as-worker-not-responding-or-late`,
+        `https://karigarbackend.vercel.app/api/v1/serviceRequest/${serviceRequestId}/cancelled-by-customer-as-worker-not-responding-or-late`,
         {}, 
         {
           headers: { Authorization: `Bearer ${token}` },

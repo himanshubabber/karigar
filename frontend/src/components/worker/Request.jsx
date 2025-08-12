@@ -35,7 +35,7 @@ const Request = ({ request }) => {
         const { latitude, longitude } = position.coords;
         try {
           await axios.post(
-            "http://localhost:8000/api/v1/serviceRequest/accept",
+            "https://karigarbackend.vercel.app/api/v1/serviceRequest/accept",
             { 
               serviceRequestId: _id,
               coordinates: [longitude, latitude],
@@ -44,7 +44,7 @@ const Request = ({ request }) => {
           );
 
           const fullDetails = await axios.post(
-            "http://localhost:8000/api/v1/serviceRequest/get-service-details",
+            "https://karigarbackend.vercel.app/api/v1/serviceRequest/get-service-details",
             { serviceRequestId: _id },
             { withCredentials: true }
           );

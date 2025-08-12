@@ -26,11 +26,11 @@ const Edit_customer = () => {
 
   const updateFieldAPI = async (field, value) => {
     const apiMap = {
-      fullName: "http://localhost:8000/api/v1/customer/update-fullName",
-      email: "http://localhost:8000/api/v1/customer/update-email",
-      phone: "http://localhost:8000/api/v1/customer/update-phone",
-      address: "http://localhost:8000/api/v1/customer/update-address",
-      profilePhoto: "http://localhost:8000/api/v1/customer/update-profile-photo",
+      fullName: "https://karigarbackend.vercel.app/api/v1/customer/update-fullName",
+      email: "https://karigarbackend.vercel.app/api/v1/customer/update-email",
+      phone: "https://karigarbackend.vercel.app/api/v1/customer/update-phone",
+      address: "https://karigarbackend.vercel.app/api/v1/customer/update-address",
+      profilePhoto: "https://karigarbackend.vercel.app/api/v1/customer/update-profile-photo",
     };
 
     try {

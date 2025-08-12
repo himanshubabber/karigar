@@ -26,11 +26,11 @@ const Edit_worker = () => {
 
   const updateFieldAPI = async (field, value) => {
     const apiMap = {
-      fullName: "http://localhost:8000/api/v1/worker/update-fullName",
-      email: "http://localhost:8000/api/v1/worker/update-email",
-      phone: "http://localhost:8000/api/v1/worker/update-phone",
-      address: "http://localhost:8000/api/v1/worker/update-address",
-      profilePhoto: "http://localhost:8000/api/v1/worker/update-profile-photo",
+      fullName: "https://karigarbackend.vercel.app/api/v1/worker/update-fullName",
+      email: "https://karigarbackend.vercel.app/api/v1/worker/update-email",
+      phone: "https://karigarbackend.vercel.app/api/v1/worker/update-phone",
+      address: "https://karigarbackend.vercel.app/api/v1/worker/update-address",
+      profilePhoto: "https://karigarbackend.vercel.app/api/v1/worker/update-profile-photo",
     };
 
     try {
@@ -96,7 +96,7 @@ const Edit_worker = () => {
 
     try {
     const { data } = await axios.patch(
-      "/api/v1/worker/update-categories",
+      "https://karigarbackend.vercel.app/api/v1/worker/update-categories",
       { newCategory: newCat },
       { withCredentials: true }
     );

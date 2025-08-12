@@ -57,7 +57,7 @@ const Worker_middle = ({ isOnline, setIsOnline, worker }) => {
           return;
         }
         const res = await axios.post(
-          "http://localhost:8000/api/v1/worker/worker-info",
+          "https://karigarbackend.vercel.app/api/v1/worker/worker-info",
           { _id: workerId }
         );
         SetNewWorker(res.data.data);
@@ -77,7 +77,7 @@ const Worker_middle = ({ isOnline, setIsOnline, worker }) => {
           const { latitude, longitude } = pos.coords;
           console.log(pos);
           try {
-            await axios.post("http://localhost:8000/api/v1/worker/update-location", {
+            await axios.post("https://karigarbackend.vercel.app/api/v1/worker/update-location", {
               coordinates: [longitude, latitude],
             },
             { withCredentials: true },
@@ -99,7 +99,7 @@ const Worker_middle = ({ isOnline, setIsOnline, worker }) => {
 
   const handleLogout = async () => {
     try {
-      const res = await axios.post("http://localhost:8000/api/v1/worker/logout", null, {
+      const res = await axios.post("https://karigarbackend.vercel.app/api/v1/worker/logout", null, {
         withCredentials: true,
       });
 
