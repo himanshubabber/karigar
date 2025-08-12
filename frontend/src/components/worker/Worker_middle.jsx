@@ -6,11 +6,12 @@ import { FiLogOut } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useState } from "react";
+import { useWorker } from "../../Context/Worker_context";
 
 const Worker_middle = ({ isOnline, setIsOnline, worker }) => {
   const navigate = useNavigate();
   const [NewWorker,SetNewWorker]=useState(worker);
-
+  const { token } = useWorker();
 
   const [suspended, setSuspended] = useState(false);
 
@@ -100,6 +101,7 @@ const Worker_middle = ({ isOnline, setIsOnline, worker }) => {
   const handleLogout = async () => {
     try {
       const res = await axios.post("https://karigarbackend.vercel.app/api/v1/worker/logout", null, {
+        headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
 

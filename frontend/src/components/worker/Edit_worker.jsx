@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useWorker } from "../../Context/Worker_context";
 
 const Edit_worker = () => {
   const { state: workerData } = useLocation();
   const navigate = useNavigate();
+  const { token } = useWorker();
 
   const [form, setForm] = useState({
     fullName: workerData?.fullName || "",
@@ -39,10 +41,11 @@ const Edit_worker = () => {
         formData.append("profilePhoto", value);
 
         const { data } = await axios.patch(apiMap[field], formData, {
-          withCredentials: true,
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
+          headers: { Authorization: `Bearer ${token}` },
+    withCredentials: true,
+          // headers: {
+          //   "Content-Type": "multipart/form-data",
+          // },
         });
 
         setProfilePhoto(data.data.profilePhoto);
@@ -98,7 +101,8 @@ const Edit_worker = () => {
     const { data } = await axios.patch(
       "https://karigarbackend.vercel.app/api/v1/worker/update-categories",
       { newCategory: newCat },
-      { withCredentials: true }
+      {  headers: { Authorization: `Bearer ${token}` },
+      withCredentials: true,}
     );
 
     setWorkingCategory(data.data.workingCategory); // updated from backend
