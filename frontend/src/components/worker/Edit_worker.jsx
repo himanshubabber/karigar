@@ -52,7 +52,9 @@ const Edit_worker = () => {
         console.log(data.data);
         alert("Profile photo updated successfully!");
       } else {
-        await axios.patch(apiMap[field], { [field]: value }, { withCredentials: true });
+        await axios.patch(apiMap[field], { [field]: value }, 
+          { headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true, });
         alert(`${field} updated successfully!`);
       }
     } catch (err) {
@@ -199,7 +201,7 @@ const Edit_worker = () => {
                   {cat}
                   <button
                     type="button"
-                    className="btn-close btn-close-white ms-2"
+                    className="btn btn-white ms-2"
                     onClick={() => handleRemoveCategory(idx)}
                   ></button>
                 </span>
