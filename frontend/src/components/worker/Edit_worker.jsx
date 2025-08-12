@@ -53,8 +53,11 @@ const Edit_worker = () => {
         alert("Profile photo updated successfully!");
       } else {
         await axios.patch(apiMap[field], { [field]: value }, 
-          { headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true, });
+          {   withCredentials: true,
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+           });
         alert(`${field} updated successfully!`);
       }
     } catch (err) {
