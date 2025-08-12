@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState ,useEffect} from "react";
 import { useNavigate } from "react-router-dom";
 import { useServiceReq } from "../../Context/Service_req_context";
 import axios from "axios";
@@ -13,6 +13,7 @@ const Request = ({ request }) => {
   const { updateSelectedReq } = useServiceReq();
   const [accepted, setAccepted] = useState(false);
   const [loading,setLoading]=useState(false);
+  const [address, setAddress] = useState("");
 
   const {
     _id,
@@ -26,6 +27,27 @@ const Request = ({ request }) => {
     visitingCharge,
     createdAt,
   } = request;
+
+
+  useEffect(() => {
+    async function fetchAddress() {
+      if (customerLocation?.coordinates?.length === 2) {
+        const [lng, lat] = customerLocation.coordinates; // [lng, lat]
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`
+          );
+          const data = await res.json();
+          setAddress(data.display_name || "");
+        } catch (err) {
+          console.error("Reverse geocode error:", err);
+          setAddress("");
+        }
+      }
+    }
+
+    fetchAddress();
+  }, [customerLocation]);
 
   const handleAccept = async () => {
     if (!navigator.geolocation) {
@@ -86,7 +108,9 @@ const Request = ({ request }) => {
       </h5>
 
       <p><FaUser className="me-2" /> <strong>Customer:</strong> {customerId?.fullName || "Unknown"}</p>
-      <p><FaMapMarkerAlt className="me-2 text-danger" /> <strong>Location:</strong> {customerLocation?.address || "Unknown location"}</p>
+      <p><FaMapMarkerAlt className="me-2 text-danger" /> <strong>Location:</strong>
+       {address}
+       </p>
       <p><strong>Issue:</strong> {description}</p>
       <p><FaRupeeSign className="me-2 text-success" /> <strong>Visiting Charge:</strong> ₹{visitingCharge}</p>
       <p><strong>Status:</strong> {orderStatus} | {jobStatus}</p>
