@@ -4,8 +4,11 @@ import { useServiceReq } from "../../Context/Service_req_context";
 import axios from "axios";
 import { FaMapMarkerAlt, FaUser, FaWrench, FaRupeeSign } from "react-icons/fa";
 import Spinner from "../../components/Style/Spinner.jsx"
+import {useWorker} from "../../Context/Worker_context.jsx"
+
 
 const Request = ({ request }) => {
+  const { token } = useWorker();
   const navigate = useNavigate();
   const { updateSelectedReq } = useServiceReq();
   const [accepted, setAccepted] = useState(false);
@@ -40,7 +43,10 @@ const Request = ({ request }) => {
               serviceRequestId: _id,
               coordinates: [longitude, latitude],
             },
-            { withCredentials: true }
+            { 
+             headers: { Authorization: `Bearer ${token}` },
+            withCredentials: true,
+            }
           );
 
           const fullDetails = await axios.post(
