@@ -41,10 +41,8 @@ const Edit_worker = () => {
         formData.append("profilePhoto", value);
 
         const { data } = await axios.patch(apiMap[field], formData, {
+          headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
         });
 
         setProfilePhoto(data.data.profilePhoto);
