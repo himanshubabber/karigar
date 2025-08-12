@@ -44,7 +44,7 @@ const Edit_worker = () => {
           headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
         });
-        setProfilePhoto(data.data.profilePhoto);
+      //  setProfilePhoto(data.data.profilePhoto);
 
         // Update the worker context with the new profile photo URL
         setworker((prev) => ({
@@ -62,6 +62,7 @@ const Edit_worker = () => {
           withCredentials: true,
            });
         alert(`${field} updated successfully!`);
+
         setworker((prev) => ({
           ...prev,
           [field]: value,
