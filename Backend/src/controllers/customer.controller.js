@@ -169,7 +169,7 @@ const updateProfilePhoto = asyncHandler(async (req, res) => {
   if (!profilePhotoLocalPath) {
     throw new ApiError(400, "Profile Photo file is missing");
   }
-
+  
   const profilePhotoData = await uploadOnCloudinary(profilePhotoLocalPath);
 
   if (!profilePhotoData?.secure_url) {

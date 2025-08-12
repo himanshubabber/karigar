@@ -259,32 +259,37 @@ const updateCategory= asyncHandler(async(req,res)=>{
 
 
 const updateProfilePhoto = asyncHandler(async (req, res) => {
-  const workerId = req.worker?._id;
+  const profilePhotoLocalPath = req.file?.path;
 
-  if (!req.file) {
+  if (!profilePhotoLocalPath) {
     throw new ApiError(400, "Profile Photo file is missing");
   }
-   console.log(req.file.path)
-  const uploadedPhoto = await uploadOnCloudinary(req.file.path);
-  if (!uploadedPhoto) {
-    throw new ApiError(500, "Photo upload failed");
-  }
-  console.log("uploadedphoto is",uploadedPhoto)
+  
+  const profilePhotoData = await uploadOnCloudinary(profilePhotoLocalPath);
 
-  const updatedWorker = await Worker.findByIdAndUpdate(
-    workerId,
-    { profilePhoto: uploadedPhoto.secure_url },
+  if (!profilePhotoData?.secure_url) {
+    throw new ApiError(400, "Error while uploading Profile Photo");
+  }
+
+  const worker = await Worker.findByIdAndUpdate(
+    req.worker?._id,
+    {
+      $set: {
+        profilePhoto: profilePhotoData.secure_url,
+      },
+    },
     { new: true }
   ).select("-password -refreshToken");
 
-  if (!updatedWorker) {
+  if (!worker) {
     throw new ApiError(404, "Worker not found");
   }
 
   return res.status(200).json(
-    new ApiResponse(200, updatedWorker, "Profile photo updated successfully")
+    new ApiResponse(200, worker, "Profile Photo updated successfully")
   );
 });
+
 
 
 const updateEmail = asyncHandler(async(req, res) => {
