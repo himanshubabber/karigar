@@ -198,7 +198,8 @@ const Location_map = () => {
           serviceRequestId: order._id,
           otp: otp
         },
-        { withCredentials: true }
+        { headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true, }
       );
   
       alert("OTP verified! Job marked as completed.");
@@ -257,7 +258,8 @@ const Location_map = () => {
       const res = await axios.patch(
         `https://karigarbackend.vercel.app/api/v1/serviceRequest/${order._id}/set-quote-amount`,
         { quoteAmount },
-        { withCredentials: true }
+        {headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true, }
       );
       const updatedData = await updateJobStatus(order._id,"repairAmountQuoted");
     setQuoteMessage("✅ Quote submitted successfully");
