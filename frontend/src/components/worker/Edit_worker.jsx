@@ -41,11 +41,10 @@ const Edit_worker = () => {
         formData.append("profilePhoto", value);
 
         const { data } = await axios.patch(apiMap[field], formData, {
-          headers: { Authorization: `Bearer ${token}` },
-    withCredentials: true,
-          // headers: {
-          //   "Content-Type": "multipart/form-data",
-          // },
+          withCredentials: true,
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         });
 
         setProfilePhoto(data.data.profilePhoto);
@@ -53,10 +52,9 @@ const Edit_worker = () => {
         alert("Profile photo updated successfully!");
       } else {
         await axios.patch(apiMap[field], { [field]: value }, 
-          {   withCredentials: true,
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
+          {   
+            headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
            });
         alert(`${field} updated successfully!`);
       }
