@@ -6,7 +6,7 @@ import { useWorker } from "../../Context/Worker_context";
 const Edit_worker = () => {
   const { state: workerData } = useLocation();
   const navigate = useNavigate();
-  const {worker,setworker, token } = useWorker();
+  const {worker,setWorker, token } = useWorker();
 
   const [form, setForm] = useState({
     fullName: workerData?.fullName || "",
@@ -47,7 +47,7 @@ const Edit_worker = () => {
       //  setProfilePhoto(data.data.profilePhoto);
 
         // Update the worker context with the new profile photo URL
-        setworker((prev) => ({
+        setWorker((prev) => ({
           ...prev,
           profilePhoto: data.data.profilePhoto,
         }));
@@ -63,7 +63,7 @@ const Edit_worker = () => {
            });
         alert(`${field} updated successfully!`);
 
-        setworker((prev) => ({
+        setWorker((prev) => ({
           ...prev,
           [field]: value,
         }));

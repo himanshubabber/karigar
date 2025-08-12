@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useCustomer } from "../../Context/Customer_context";
 
 const Edit_customer = () => {
-  const { customer, setCustomer } = useCustomer();
+  const { customer, setCustomer,token } = useCustomer();
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
@@ -39,10 +39,8 @@ const Edit_customer = () => {
         formData.append("profilePhoto", value);
 
         const { data } = await axios.patch(apiMap[field], formData, {
+          headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
         });
 
         setCustomer(data.data);
@@ -50,7 +48,9 @@ const Edit_customer = () => {
         setProfilePhoto(data.data.profilePhoto);
         alert("Profile photo updated successfully!");
       } else {
-        await axios.patch(apiMap[field], { [field]: value }, { withCredentials: true });
+        await axios.patch(apiMap[field], { [field]: value }, {  headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+         });
 
         const updatedCustomer = { ...customer, [field]: value };
         setCustomer(updatedCustomer);
