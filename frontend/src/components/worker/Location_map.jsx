@@ -432,9 +432,12 @@ const Location_map = () => {
              </p>
             )}
             </div>
+            <p><strong><MdNetworkWifi size={20} /> Job Status:</strong> <span style={{ color: "#ffc107" }}>{order.jobStatus}</span></p>
 
             {setQuoteAmount && 
-            <div> <Otp_timer  durationInSeconds={300} jobCompleted={order?.orderStatus === "completed"}   />
+            <div> 
+              {/* <Otp_timer  durationInSeconds={300} jobCompleted={order?.orderStatus === "completed"}   /> */}
+              
               <input
                 type="text"
                 value={otp}

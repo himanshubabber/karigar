@@ -2,6 +2,9 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useCustomer } from "../../Context/Customer_context";
 import { useNavigate } from "react-router-dom";
+import { useServiceReq } from "../../Context/Service_req_context";
+
+
 
 const History_customer = () => {
   const { token } = useCustomer();
@@ -9,6 +12,8 @@ const History_customer = () => {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [workerInfoMap, setWorkerInfoMap] = useState({}); // workerId -> worker info
+  const { updateSelectedReq } = useServiceReq();
+
 
   // Fetch service request history
   const fetchCustomerHistory = async () => {
@@ -24,6 +29,33 @@ const History_customer = () => {
       setLoading(false);
     }
   };
+ 
+  const handleGobackbutton = async (id) => {
+    try {
+      const fullDetails = await axios.post(
+        "http://localhost:8000/api/v1/serviceRequest/get-service-details",
+        { serviceRequestId: id },
+        { withCredentials: true }
+      );
+  
+      const fetchedRequest = fullDetails?.data?.data?.serviceRequest;
+  
+      localStorage.setItem("serviceRequestId", id);
+      localStorage.setItem("serviceRequestData", JSON.stringify(fetchedRequest));
+  
+      // If using context, uncomment these lines and import them
+      // updateSelectedReq(fetchedRequest);
+      // setAccepted(true);
+
+      updateSelectedReq(fetchedRequest);
+  
+      navigate("/location_user");
+    } catch (err) {
+      alert("Error in go back to request");
+      console.error(err);
+    }
+  };
+
 
   // Fetch all worker info after history is fetched
   useEffect(() => {
@@ -147,6 +179,17 @@ const History_customer = () => {
                         <audio className="w-100 mt-1" controls src={item.audioNoteUrl} />
                       </div>
                     )}
+
+   <div className="mt-auto d-flex justify-content-end">
+  <button
+    className="btn btn-warning"
+    onClick={() => handleGobackbutton(item._id)}
+    disabled={item.orderStatus==="completed" || 
+      item.orderStatus==="cancelled"} // disables if completedAt exists
+  >
+    Go to Request
+  </button>
+    </div>
                   </div>
                 </div>
               </div>

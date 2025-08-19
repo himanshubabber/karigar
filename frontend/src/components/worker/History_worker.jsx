@@ -3,6 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useWorker } from "../../Context/Worker_context";
 import Spinner from "../Style/Spinner";
+import { useServiceReq } from "../../Context/Service_req_context";
 
 const History_worker = () => {
   const { token } = useWorker();
@@ -12,6 +13,8 @@ const History_worker = () => {
   const [customerInfoMap, setCustomerInfoMap] = useState({});
 
   // Fetch service request history
+
+  const { updateSelectedReq } = useServiceReq();
   const fetchWorkerHistory = async () => {
     try {
       const { data } = await axios.get("https://karigarbackend.vercel.app/api/v1/serviceRequest/history_worker", {
@@ -27,7 +30,31 @@ const History_worker = () => {
     }
   };
 
+  const handleGobackbutton = async (id) => {
+    try {
+      const fullDetails = await axios.post(
+        "http://localhost:8000/api/v1/serviceRequest/get-service-details",
+        { serviceRequestId: id },
+        { withCredentials: true }
+      );
+
+      const fetchedRequest = fullDetails?.data?.data?.serviceRequest;
+
+      localStorage.setItem("serviceRequestId", id);
+      localStorage.setItem("serviceRequestData", JSON.stringify(fetchedRequest));
+
+      updateSelectedReq(fetchedRequest);
+      navigate("/location_worker");
+    } catch (err) {
+      alert("Error in go back to request");
+      console.error(err);
+    }
+  };
+
+
   // Fetch all customer info once history is fetched
+
+
   useEffect(() => {
     const fetchAllCustomerInfo = async () => {
       const uniqueCustomerIds = [
@@ -147,6 +174,20 @@ const History_worker = () => {
                         <audio className="w-100 mt-1" controls src={item.audioNoteUrl} />
                       </div>
                     )}
+
+<div className="mt-auto d-flex justify-content-end">
+                      <button
+                        className="btn btn-warning"
+                        onClick={() => handleGobackbutton(item._id)}
+                        disabled={
+                          item.orderStatus === "completed" ||
+                          item.orderStatus === "cancelled"
+                        }
+                      >
+                        Go to Request
+                      </button>
+                    </div>
+                    
                   </div>
                 </div>
               </div>
