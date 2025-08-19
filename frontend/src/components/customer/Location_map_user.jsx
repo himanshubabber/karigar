@@ -400,7 +400,7 @@ useEffect(() => {
       return;
     }
     try {
-      
+       
       const updatedData = await updateJobStatus(serviceRequestId, "verified", token);
       updateSelectedReq(updatedData.data || updatedData);
       setVerifyDone(true);
@@ -414,15 +414,16 @@ useEffect(() => {
 
   const handleWorkerNotResponding = async () => {
     try {
-      const res = await axios.post(
-        `https://karigarbackend.vercel.app/api/v1/serviceRequest/${serviceRequestId}/cancelled-by-customer-as-worker-not-responding-or-late`,
-        {}, 
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      alert(res.data.message || "Cancelled: Worker not responding");
-      navigate("/customer");
+      // const res = await axios.post(
+      //   `https://karigarbackend.vercel.app/api/v1/serviceRequest/${serviceRequestId}/cancelled-by-customer-as-worker-not-responding-or-late`,
+      //   {}, 
+      //   {
+      //     headers: { Authorization: `Bearer ${token}` },
+      //   }
+      // );
+      // alert(res.data.message || "Cancelled: Worker not responding");
+      // navigate("/customer");
+      alert("You can't cancel the request")
     } catch (err) {
       const message =
         err.response?.data?.message ||
