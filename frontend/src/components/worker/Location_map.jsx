@@ -505,6 +505,7 @@ const Location_map = () => {
           Customer Request Info
         </h5>
         <div style={{ lineHeight: "1.8", fontSize: "15px", color: "#212529" }}>
+          <p></p>
           <p><strong><CgProfile size={20} /> Name:</strong> {customer.fullName || "N/A"}</p>
           <p><strong>📧 Email:</strong> {customer.email || "N/A"}</p>
           <p><strong>📞 Phone:</strong> {customer.phone || "N/A"}</p>
