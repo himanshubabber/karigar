@@ -146,7 +146,7 @@ const Location_map = () => {
   const [address, setAddress] = useState("");
   const [showCancelOptions, setShowCancelOptions] = useState(false);
   const [otp, setOtp] = useState("");
-  const [quoteAmount, setQuoteAmount] = useState("");
+  const [quoteAmount, setQuoteAmount] = useState(0);
   const [quoteMessage, setQuoteMessage] = useState(null);
   const [isLocated,setisLocated]= useState(false);
   //const { selectedReq: ser, updateSelectedReq } = useServiceReq();
@@ -405,19 +405,21 @@ const Location_map = () => {
         💰 Set Your Quote (₹):
        </label>
 
-         <input
-         type="number"
-         id="quoteAmount"
-         className="form-control"
-        placeholder="e.g., 500"
-    value={quoteAmount}
-    onChange={(e) => setQuoteAmount(e.target.value)}
-    style={{ marginTop: "6px", marginBottom: "12px" }}
-        />
+       <input
+    type="number"
+    id="quoteAmount"
+   className="form-control"
+   placeholder={quoteAmount || "e.g., 500"}
+   value={order.quoteAmount}
+   onChange={(e) => setQuoteAmount(e.target.value)}
+   style={{ marginTop: "6px", marginBottom: "12px" }}
+   disabled={order.quoteAmount>0}
+/>
 
   <button
     className="btn btn-primary w-100 fw-semibold"
     onClick={handleQuoteSubmit}
+    disabled={order.quoteAmount>0}
       >
      Submit Quote
         </button>
