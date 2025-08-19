@@ -33,7 +33,7 @@ const History_customer = () => {
   const handleGobackbutton = async (id) => {
     try {
       const fullDetails = await axios.post(
-        "http://localhost:8000/api/v1/serviceRequest/get-service-details",
+        "https://karigarbackend.vercel.app/api/v1/serviceRequest/get-service-details",
         { serviceRequestId: id },
         { withCredentials: true }
       );
