@@ -11,8 +11,8 @@ import { useWorker } from "../../Context/Worker_context";
 const Worker_middle = ({ isOnline, setIsOnline, worker }) => {
   const navigate = useNavigate();
   const [NewWorker,SetNewWorker]=useState(worker);
-  const { token } = useWorker();
-
+  
+  const { token, logoutWorker } = useWorker();
   const [suspended, setSuspended] = useState(false);
 
   useEffect(() => {
@@ -108,6 +108,7 @@ const Worker_middle = ({ isOnline, setIsOnline, worker }) => {
       console.log(res);
   
       if (res.status === 200 || res.data?.success) {
+        logoutWorker();
         localStorage.removeItem("token");
         localStorage.removeItem("worker");
         navigate("/signin", { replace: true });
