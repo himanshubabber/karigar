@@ -109,6 +109,7 @@ const Worker_middle = ({ isOnline, setIsOnline, worker }) => {
   
       if (res.status === 200 || res.data?.success) {
         localStorage.removeItem("token");
+        localStorage.removeItem("worker");
         navigate("/signin", { replace: true });
       } else {
         alert(`Logout failed: ${res.statusText}`);
