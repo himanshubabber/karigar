@@ -249,7 +249,7 @@ const Location_map_user = () => {
    {console.log("dest pos",destination)}
 
   useEffect(() => {
-    if (!userPosition && customer?.workerLocation?.coordinates?.length === 2) {
+    if (!userPosition && customer?.customerLocation?.coordinates?.length === 2) {
       setUserPosition([
         customer.workerLocation.coordinates[1],
         customer.workerLocation.coordinates[0],
