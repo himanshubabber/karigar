@@ -360,7 +360,7 @@ useEffect(() => {
   console.log(distanceInfo);
   if (
     distanceInfo && 
-    distanceInfo.distance <= 30 && 
+    distanceInfo.distance <= 40 && 
     !hasArrived && 
     ser.orderStatus === "connected"
   ) {
@@ -416,7 +416,7 @@ useEffect(() => {
     try {
       // const res = await axios.post(
       //   `https://karigarbackend.vercel.app/api/v1/serviceRequest/${serviceRequestId}/cancelled-by-customer-as-worker-not-responding-or-late`,
-      //   {}, 
+      //   {},
       //   {
       //     headers: { Authorization: `Bearer ${token}` },
       //   }
