@@ -237,9 +237,9 @@ const Location_map_user = () => {
   const workerCoords = ser?.orderStatus === "cancelled" 
   ? null 
   : (worker?.workerLocation?.coordinates?.length === 2
-    ? [worker.workerLocation.coordinates[0], worker.workerLocation.coordinates[1]]
+    ? [worker.workerLocation.coordinates[1], worker.workerLocation.coordinates[0]]
     : null);
-
+  console.log(worker)
   const destination = workerCoords;
 
   const distanceInfo = userPosition && destination
