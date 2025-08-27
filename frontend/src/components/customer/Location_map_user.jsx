@@ -237,7 +237,7 @@ const Location_map_user = () => {
   const workerCoords = ser?.orderStatus === "cancelled" 
   ? null 
   : (worker?.workerLocation?.coordinates?.length === 2
-    ? [worker.workerLocation.coordinates[0], worker.workerLocation.coordinates[1]]
+    ? [worker.workerLocation.coordinates[1], worker.workerLocation.coordinates[0]]
     : null);
 
   const destination = workerCoords;
@@ -259,11 +259,24 @@ const Location_map_user = () => {
 
   function Routing({ from, to }) {
     const map = useMap();
+  
     useEffect(() => {
       if (!map || !from || !to) return;
   
       const control = L.Routing.control({
-        waypoints: [L.latLng(from), L.latLng(to)],
+        waypoints: [
+          L.latLng(from[0], from[1]),
+          L.latLng(to[0], to[1]),
+        ],
+        router: L.Routing.osrmv1({
+          serviceUrl: "https://router.project-osrm.org/route/v1",
+          profile: "driving",
+          // explicitly convert to [lon,lat] for OSRM
+          coordinates: [
+            [from[1], from[0]], // [lon, lat]
+            [to[1], to[0]]      // [lon, lat]
+          ]
+        }),
         lineOptions: { styles: [{ color: "blue", weight: 5 }] },
         show: false,
         addWaypoints: false,
