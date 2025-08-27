@@ -237,7 +237,7 @@ const Location_map_user = () => {
   const workerCoords = ser?.orderStatus === "cancelled" 
   ? null 
   : (worker?.workerLocation?.coordinates?.length === 2
-    ? [worker.workerLocation.coordinates[1], worker.workerLocation.coordinates[0]]
+    ? [worker.workerLocation.coordinates[0], worker.workerLocation.coordinates[1]]
     : null);
 
   const destination = workerCoords;
@@ -251,8 +251,8 @@ const Location_map_user = () => {
   useEffect(() => {
     if (!userPosition && customer?.customerLocation?.coordinates?.length === 2) {
       setUserPosition([
-        customer.customerLocation.coordinates[1],
         customer.customerLocation.coordinates[0],
+        customer.customerLocation.coordinates[1],
       ]);
     }
   }, [customer, userPosition]);
