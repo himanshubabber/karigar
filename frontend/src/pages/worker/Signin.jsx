@@ -139,15 +139,15 @@ const Signin_worker = () => {
             <p></p>
             <p style={{textAlign:"center"}}>Or</p>
 
-            <button type="submit" className="btn btn-primary w-100">
-    <GoogleLogin
-      onSuccess={handleGoogleLogin}
-      onError={() => console.log("Google login failed")}
-      theme="filled_blue" // Google’s blue button
-      size="large"
-    />
-    </button>
-   
+            <div className="w-100 d-flex justify-content-center">
+  <GoogleLogin
+    onSuccess={handleGoogleLogin}
+    onError={() => console.log("Google login failed")}
+    theme="filled_blue"
+    size="large"
+    width="100%"
+  />
+</div>
 
           </form>
         </div>
