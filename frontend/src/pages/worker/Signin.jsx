@@ -139,7 +139,15 @@ const Signin_worker = () => {
             <p></p>
             <p style={{textAlign:"center"}}>Or</p>
 
-          
+            <div
+  style={{
+    display: "flex",           // enable flex
+    justifyContent: "center",  // center horizontally
+    width: "28rem",            // match your card width
+    maxWidth: "100%",          // responsive on smaller screens
+    margin: "1rem auto",       // center container in page
+  }}
+>
     <GoogleLogin
       onSuccess={handleGoogleLogin}
       onError={() => console.log("Google login failed")}
@@ -147,6 +155,7 @@ const Signin_worker = () => {
       size="large"
       width={448} // max width allowed
     ></GoogleLogin>
+    </div>
   
           </form>
 
