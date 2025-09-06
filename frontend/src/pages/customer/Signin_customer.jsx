@@ -126,20 +126,20 @@ const Signin_customer = () => {
               </span>
             </p>
 
-            <button type="submit" className="btn btn-primary w-100">
+            <button type="submit" className="btn btn-primary w-100" >
               Sign In
             </button>
              <p></p>
             <p style={{textAlign:"center"}}>Or</p>
 
             <div className="w-100 d-flex justify-content-center">
-  <div style={{ width: "100%", maxWidth: "448px" }}>
+  <div style={{ width: "100%", maxWidth: "28rem" }}>
     <GoogleLogin
       onSuccess={handleGoogleLogin}
       onError={() => console.log("Google login failed")}
-      theme="filled_blue"
+       theme="filled_blue"
       size="large"
-      width={448} // max width allowed
+      width="28rem" // max width allowed
     />
   </div>
 </div>
