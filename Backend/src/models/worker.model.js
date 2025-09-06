@@ -20,7 +20,7 @@ const workerSchema = new mongoose.Schema(
     },
     phone: {
       type: String,
-      required: true,
+      // required: true,
       trim: true,
       validate: {
         validator: (v) => /^\d{10}$/.test(v),
@@ -29,12 +29,12 @@ const workerSchema = new mongoose.Schema(
     },
     address: {
       type: String,
-      required: true,
+      // required: true,
       trim: true,
     },
     password: {
       type: String,
-      required: [true, "Password is required"],
+      // required: [true, "Password is required"],
       minlength: [8, "Password must be at least 8 characters long"],
     },
     refreshToken: {

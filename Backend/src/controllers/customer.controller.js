@@ -7,6 +7,9 @@ import { Otp } from "../models/otp.model.js";
 import { ServiceRequest } from "../models/serviceRequest.model.js";
 import jwt from "jsonwebtoken";
 import twilio from "twilio";
+import { OAuth2Client } from "google-auth-library";
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const generateAccessAndRefreshTokens = async (customerId) => {
   const customer = await Customer.findById(customerId);
@@ -85,6 +88,54 @@ const loginCustomer = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(200, { customer: loggedInCustomer, accessToken, refreshToken }, "Customer logged in successfully")
     );
+});
+
+const loginCustomerWithGoogle = asyncHandler(async (req, res) => {
+  const { credential } = req.body;
+  if (!credential) throw new ApiError(400, "Google credential is required");
+
+  // Verify Google token
+  const ticket = await client.verifyIdToken({
+    idToken: credential,
+    audience: process.env.GOOGLE_CLIENT_ID,
+  });
+
+  const payload = ticket.getPayload();
+  if (!payload || !payload.email) throw new ApiError(400, "Google profile email not found");
+
+  // Check if customer already exists
+  let customer = await Customer.findOne({ email: payload.email });
+
+  if (!customer) {
+    // Create a new customer if not exists
+    customer = await Customer.create({
+      fullName: payload.name || "No Name",
+      email: payload.email,
+      password: Math.random().toString(36).slice(-8), // temporary password
+      profilePhoto: payload.picture || "",
+    });
+  }
+
+  // Generate tokens
+  const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(customer._id);
+
+  const loggedInCustomer = await Customer.findById(customer._id).select("-password -refreshToken");
+
+  // Cookie options
+  const isProd = process.env.NODE_ENV === "production";
+  const cookieOptions = {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "None" : "Lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    path: "/",
+  };
+
+  return res
+    .cookie("accessToken", accessToken, cookieOptions)
+    .cookie("refreshToken", refreshToken, cookieOptions)
+    .status(200)
+    .json(new ApiResponse(200, { customer: loggedInCustomer, accessToken, refreshToken }, "Customer logged in with Google successfully"));
 });
 
 const logoutCustomer = asyncHandler(async (req, res) => {
@@ -339,6 +390,7 @@ const getCustomerById = asyncHandler(async (req, res) => {
 export {
   registerCustomer,
   loginCustomer,
+  loginCustomerWithGoogle,
   logoutCustomer,
   refreshAccessToken,
   changeCurrentPassword,

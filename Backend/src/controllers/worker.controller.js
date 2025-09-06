@@ -7,6 +7,9 @@ import { Otp } from "../models/otp.model.js";
 import jwt from "jsonwebtoken";
 import { ServiceRequest } from "../models/serviceRequest.model.js";
 
+import { OAuth2Client } from "google-auth-library";
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
 
 const generateAccessAndRefreshTokens = async(workerId)=>{
     try {
@@ -129,6 +132,80 @@ const loginWorker = asyncHandler(async (req, res) => {
         )
       );
   });
+  
+  const loginWorkerWithGoogle = async (req, res) => {
+    try {
+      const { credential } = req.body;
+      if (!credential) {
+        throw new ApiError(400, "Credential is required");
+      }
+  
+      // Verify Google token
+      const ticket = await client.verifyIdToken({
+        idToken: credential,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+  
+      const payload = ticket.getPayload();
+      if (!payload || !payload.email) {
+        throw new ApiError(400, "Google profile with email is required");
+      }
+  
+      // Check if worker already exists
+      let worker = await Worker.findOne({ email: payload.email });
+  
+      // If worker doesn't exist, create one
+      if (!worker) {
+        worker = await Worker.create({
+          fullName: payload.name,
+          email: payload.email,
+          password: crypto.randomBytes(20).toString("hex"), // random password
+          profilePhoto: payload.picture || "",
+        });
+      }
+  
+      // Generate access and refresh tokens
+      const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(worker._id);
+  
+      // Save refreshToken in worker document
+      worker.refreshToken = refreshToken;
+      await worker.save({ validateBeforeSave: false });
+  
+      // Fetch worker without password & refreshToken
+      const safeWorker = await Worker.findById(worker._id).select("-password -refreshToken");
+  
+      const isProd = process.env.NODE_ENV === "production";
+      const cookieOptions = {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: isProd ? "None" : "Lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: "/",
+      };
+  
+      // Set cookies and return response
+      return res
+        .cookie("refreshToken", refreshToken, cookieOptions)
+        .cookie("accessToken", accessToken, cookieOptions)
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            {
+              worker: safeWorker,
+              accessToken,
+              refreshToken,
+            },
+            "Google login successful"
+          )
+        );
+    } catch (err) {
+      console.error("Google login failed:", err);
+      return res
+        .status(err.statusCode || 500)
+        .json({ message: err.message || "Google login failed" });
+    }
+  };
   
   const logoutWorker = asyncHandler(async (req, res) => {
     await Worker.findByIdAndUpdate(
@@ -504,6 +581,7 @@ const rateWorker= asyncHandler(async (req,res)=>{
 export{
     registerWorker,
     loginWorker,
+    loginWorkerWithGoogle,
     logoutWorker,
     refreshAccessToken,
     changeCurrentPassword,

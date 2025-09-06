@@ -34,6 +34,8 @@ import { WorkerProvider, useWorker } from './Context/Worker_context.jsx';
 
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import ProtectedRoute_customer from './components/ProtectedRoute_customer.jsx';
+import { GoogleOAuthProvider } from "@react-oauth/google";
+
 
 function AppRouter() {
   const { token: customerToken } = useCustomer();
@@ -144,6 +146,7 @@ function AppRouter() {
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
+    <GoogleOAuthProvider clientId="398958292681-q6q51mbrskl0sujqvt37to7afqpveph3.apps.googleusercontent.com">
     <OtpProvider>
       <ServiceReqProvider>
         <CustomerProvider>
@@ -153,5 +156,6 @@ createRoot(document.getElementById("root")).render(
         </CustomerProvider>
       </ServiceReqProvider>
     </OtpProvider>
+    </GoogleOAuthProvider>
   </StrictMode>
 );

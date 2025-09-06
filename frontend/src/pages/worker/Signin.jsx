@@ -3,6 +3,10 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useWorker } from "../../Context/Worker_context";
 import Spinner from "../../components/Style/Spinner.jsx";
+import { GoogleLogin } from "@react-oauth/google";
+import { jwtDecode } from "jwt-decode";
+
+
 
 const Signin_worker = () => {
   const navigate = useNavigate();
@@ -55,6 +59,40 @@ const Signin_worker = () => {
     }
   };
 
+  const handleSuccess = async (credentialResponse) => {
+    setLoading(true);
+    try {
+      const { credential } = credentialResponse;
+      const decoded = jwtDecode(credential); // decode JWT
+      console.log("Decoded Google Profile:", decoded);
+
+      if (!decoded.email) throw new Error("Google profile with email is required");
+
+      const res = await axios.post(
+        "https://karigarbackend.vercel.app/api/v1/worker/google-login",
+        { credential },
+        { withCredentials: true }
+      );
+
+      const worker = res.data?.data?.worker;
+      const accessToken = res.data?.data?.accessToken;
+
+      if (!worker || !accessToken) throw new Error("Google login failed: Missing worker or token");
+
+      localStorage.setItem("workerId", worker._id);
+      localStorage.setItem("accessToken", accessToken);
+
+      loginWorker(worker, accessToken);
+      alert("Google login successful!");
+      navigate("/worker", { state: worker });
+    } catch (err) {
+      console.error("Login Failed:", err);
+      alert("Google login failed: " + (err.response?.data?.message || err.message));
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   return ( 
     <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
      
@@ -97,6 +135,13 @@ const Signin_worker = () => {
             <button type="submit" className="btn btn-primary w-100">
               Sign In
             </button>
+
+            <p></p>
+            <p style={{textAlign:"center"}}>Or</p>
+            <GoogleLogin
+      onSuccess={handleSuccess}
+      onError={() => console.log("Login Failed")}
+       />
           </form>
         </div>
       </div>

@@ -10,6 +10,10 @@ import serviceRequestRouter from "./src/routes/serviceRequest.route.js";
 import paymentRouter from "./src/routes/payment.route.js";
 import { ApiError } from "./src/utils/ApiError.js";
 
+
+
+
+
 dotenv.config();
 
 const app = express();
@@ -69,6 +73,8 @@ app.use(cookieParser());
 // Routes
 app.get("/", (req, res) => res.send("Hello from Express on Vercel!"));
 app.get("/api/ping", (req, res) => res.json({ ping: "pong", time: new Date() }));
+
+
 
 app.use("/api/v1/customer", customerRouter);
 app.use("/api/v1/worker", workerRouter);

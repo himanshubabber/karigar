@@ -18,7 +18,7 @@ const customerSchema = new mongoose.Schema({
     },
     phone: {
         type: String,
-        required: true,
+        // required: true,
         trim: true,
         validate: { 
             validator: (v) => /^\d{10}$/.test(v),
@@ -27,7 +27,7 @@ const customerSchema = new mongoose.Schema({
     },
     address: {
         type: String,
-        required: true,
+        // required: true,
         trim: true
     },
     profilePhoto: {
@@ -36,7 +36,7 @@ const customerSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: [true, 'Password is required'],
+        // required: [true, 'Password is required'],
         minlength: [6, 'Password must be at least 6 characters long'],
     },
     refreshToken: {

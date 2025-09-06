@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { useCustomer } from "../../Context/Customer_context";
 import Spinner from "../../components/Style/Spinner.jsx";
 // import api from "../../../api.js"
+import { GoogleLogin } from "@react-oauth/google";
+import {jwtDecode} from "jwt-decode";
 
 const Signin_customer = () => {
   const navigate = useNavigate();
@@ -59,6 +61,40 @@ const Signin_customer = () => {
     }
   };
 
+  const handleGoogleLogin = async (credentialResponse) => {
+    setLoading(true);
+    try {
+      const { credential } = credentialResponse;
+      const decoded = jwtDecode(credential);
+      console.log("Decoded Google Profile:", decoded);
+
+      if (!decoded.email) throw new Error("Google profile with email is required");
+
+      const res = await axios.post(
+        "https://karigarbackend.vercel.app/api/v1/customer/google-login",
+        { credential },
+        { withCredentials: true }
+      );
+
+      const customer = res.data?.data?.customer;
+      const accessToken = res.data?.data?.accessToken;
+
+      if (!customer || !accessToken)
+        throw new Error("Google login failed: Missing customer or token");
+
+      localStorage.setItem("karigar_customer_token", accessToken);
+      loginCustomer(customer, accessToken);
+
+      alert("Google login successful!");
+      navigate("/customer", { state: customer });
+    } catch (err) {
+      console.error("Google login failed:", err);
+      alert("Google login failed: " + (err.response?.data?.message || err.message));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
       <div className="card shadow" style={{ width: "28rem" }}>
@@ -93,6 +129,12 @@ const Signin_customer = () => {
             <button type="submit" className="btn btn-primary w-100">
               Sign In
             </button>
+             <p></p>
+            <p style={{textAlign:"center"}}>Or</p>
+
+            <div className="mt-3 text-center">
+              <GoogleLogin onSuccess={handleGoogleLogin} onError={() => console.log("Google login failed")} />
+            </div>
           </form>
         </div>
       </div>

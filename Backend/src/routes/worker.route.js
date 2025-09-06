@@ -2,6 +2,7 @@ import { Router } from "express";
 import { 
     registerWorker,
     loginWorker,
+    loginWorkerWithGoogle,
     logoutWorker,
     refreshAccessToken,
     changeCurrentPassword,
@@ -24,7 +25,7 @@ const router = Router()
 
 router.route("/register").post(upload.single("profilePhoto"),registerWorker)
 router.route("/login").post(loginWorker)
-
+router.route("/google-login").post(loginWorkerWithGoogle)
 //secured routes
 router.route("/logout").post(verifyJWT, logoutWorker)
 router.route("/refresh-token").post(refreshAccessToken)
