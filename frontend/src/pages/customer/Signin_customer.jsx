@@ -139,7 +139,7 @@ const Signin_customer = () => {
        theme="filled_blue"
       size="large"
       width="28rem" // max width allowed
-    />
+    ></GoogleLogin>
  
 
           </form>

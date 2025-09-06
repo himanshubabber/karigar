@@ -146,7 +146,7 @@ const Signin_worker = () => {
       theme="filled_blue"
       size="large"
       width="28rem" // max width allowed
-    />
+    ></GoogleLogin>
   
           </form>
         </div>
