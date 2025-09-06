@@ -139,13 +139,30 @@ const Signin_worker = () => {
             <p></p>
             <p style={{textAlign:"center"}}>Or</p>
 
-            <div style={{ display: "flex", justifyContent: "center", marginTop: "1rem" }}>
-           <GoogleLogin
-        onSuccess={handleGoogleLogin}
-        onError={() => console.log("Google login failed")}
-        width="250"
-        />
-        </div>
+    <div style={{ width: "100%", marginTop: "1rem" }}>
+    <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "#007bff",  // Bootstrap primary color
+      color: "white",
+      borderRadius: "0.375rem",   // same as Bootstrap .btn
+      padding: "0.5rem",
+      cursor: "pointer",
+      fontWeight: "500",
+    }}
+  >
+    <GoogleLogin
+      onSuccess={handleGoogleLogin}
+      onError={() => console.log("Google login failed")}
+      theme="filled_blue" // Google’s blue button
+      size="large"
+      width="100%"
+    />
+    </div>
+   </div>
+
           </form>
         </div>
       </div>

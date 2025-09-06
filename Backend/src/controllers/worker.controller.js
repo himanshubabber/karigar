@@ -6,6 +6,7 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { Otp } from "../models/otp.model.js";
 import jwt from "jsonwebtoken";
 import { ServiceRequest } from "../models/serviceRequest.model.js";
+import crypto from "crypto";
 
 import { OAuth2Client } from "google-auth-library";
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
