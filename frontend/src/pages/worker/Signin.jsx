@@ -139,8 +139,7 @@ const Signin_worker = () => {
             <p></p>
             <p style={{textAlign:"center"}}>Or</p>
 
-            <div className="w-100 d-flex justify-content-center">
-  <div style={{ width: "100%", maxWidth: "28rem" }}>
+          
     <GoogleLogin
       onSuccess={handleGoogleLogin}
       onError={() => console.log("Google login failed")}
@@ -148,8 +147,7 @@ const Signin_worker = () => {
       size="large"
       width="28rem" // max width allowed
     />
-  </div>
-</div>
+  
           </form>
         </div>
       </div>
