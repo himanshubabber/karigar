@@ -138,7 +138,7 @@ const Signin_customer = () => {
       onError={() => console.log("Google login failed")}
        theme="filled_blue"
       size="large"
-      width={448} // max width allowed
+      width="full" // max width allowed
     ></GoogleLogin>
  
 
