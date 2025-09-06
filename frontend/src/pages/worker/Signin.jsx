@@ -138,10 +138,14 @@ const Signin_worker = () => {
 
             <p></p>
             <p style={{textAlign:"center"}}>Or</p>
-            <GoogleLogin
-      onSuccess={handleSuccess}
-      onError={() => console.log("Login Failed")}
-       />
+
+            <div style={{ display: "flex", justifyContent: "center", marginTop: "1rem" }}>
+           <GoogleLogin
+        onSuccess={handleGoogleLogin}
+        onError={() => console.log("Google login failed")}
+        width="250"
+        />
+        </div>
           </form>
         </div>
       </div>

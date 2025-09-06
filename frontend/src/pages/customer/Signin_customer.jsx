@@ -132,9 +132,13 @@ const Signin_customer = () => {
              <p></p>
             <p style={{textAlign:"center"}}>Or</p>
 
-            <div className="mt-3 text-center">
-              <GoogleLogin onSuccess={handleGoogleLogin} onError={() => console.log("Google login failed")} />
-            </div>
+            <div style={{ display: "flex", justifyContent: "center", marginTop: "1rem" }}>
+          <GoogleLogin
+           onSuccess={handleGoogleLogin}
+           onError={() => console.log("Google login failed")}
+          width="250"
+         />
+       </div>
           </form>
         </div>
       </div>
