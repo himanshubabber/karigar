@@ -59,7 +59,7 @@ const Signin_worker = () => {
     }
   };
 
-  const handleSuccess = async (credentialResponse) => {
+  const handleGoogleLogin = async (credentialResponse) => {
     setLoading(true);
     try {
       const { credential } = credentialResponse;
