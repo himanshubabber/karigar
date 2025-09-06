@@ -6,15 +6,17 @@ import { FiLogOut } from "react-icons/fi";
 import { useEffect } from "react";
 
 const occupations = [
-  { title: 'Plumber', image: 'https://5.imimg.com/data5/SELLER/Default/2023/4/301270031/RO/MJ/HW/55834732/plumber-service.jpg' },
-  { title: 'Electrician', image: 'https://content.jdmagicbox.com/v2/comp/delhi/n9/011pxx11.xx11.191011134917.y1n9/catalogue/amar-electrician-dori-walan-delhi-electricians-for-commercial-1nldjoqe5s.jpg' },
-  { title: 'Carpenter', image: 'https://mccoymart.com/post/wp-content/uploads/The-Top-10-Benefits-Of-Hiring-A-Professional-Carpenter.jpg' },
-  { title: 'Painter', image: 'https://alis.alberta.ca/media/697574/painter-and-decorator-istock-174536787.jpg' },
-  { title: 'AC Repair', image: 'https://3.imimg.com/data3/BH/SR/MY-8941393/split-ac-service-500x500.jpg' },
-  { title: 'Washing Machine', image: 'https://clareservices.com/wp-content/uploads/2023/02/washing-machine-service-in-delhi.jpg' },
-  { title: 'TV Repair', image: 'https://thumbs.dreamstime.com/b/professional-repair-engineer-repairing-broken-tv-177532491.jpg' },
-  { title: 'Laptop Repair', image: 'https://5.imimg.com/data5/SELLER/Default/2022/11/YB/TZ/IK/135789645/laptop-repairing-services.jpg' },
-  { title: 'Fridge Repair', image: 'https://www.keyvendors.com/public/images/ckeditor/1666422390_refrigerator-repair-service-in-delhi.webp' },
+  { title: 'Plumber', image: '/plumber.png' },
+  { title: 'Electrician', image:
+    '/electrician.png'
+     },
+  { title: 'Carpenter', image: '/carpenter.png' },
+  { title: 'Painter', image: '/painter.png' },
+  { title: 'AC Repair', image: '/ac.png' },
+  { title: 'Washing Machine', image: '/washing-machine.png' },
+  { title: 'TV Repair', image: '/tv.png' },
+  { title: 'Laptop Repair', image: '/laptop.png' },
+  { title: 'Fridge Repair', image: 'fridge.png' },
 
 ];
 
