@@ -51,7 +51,6 @@ function AppRouter() {
     { path: "/signin", element: <Signin /> },
     { path: "/signin_customer", element: <Signin_customer /> },
 
-    // ---- Customer Parent Routes ----
     {
       path: "/customer",
       element: (
@@ -59,15 +58,24 @@ function AppRouter() {
           <Customer />
         </ProtectedRoute_customer>
       ),
-      children: [
-        { path: "edit", element: <Edit_customer /> },
-        { path: "history", element: <History_customer /> },
-        { path: "service_req_form", element: <Service_req_form /> },
-        { path: "location", element: <Location_userside /> },
-      ],
+    },
+    {
+      path: "/customer/:email",
+      element: (
+        <ProtectedRoute_customer isAuthenticated={isCustomerAuthenticated}>
+          <Customer />
+        </ProtectedRoute_customer>
+      ),
+    },
+    {
+      path: "/service_req_form",
+      element: (
+        <ProtectedRoute_customer isAuthenticated={isCustomerAuthenticated}>
+          <Service_req_form />
+        </ProtectedRoute_customer>
+      ),
     },
 
-    // ---- Worker Parent Routes ----
     {
       path: "/worker",
       element: (
@@ -75,12 +83,62 @@ function AppRouter() {
           <Worker />
         </ProtectedRoute>
       ),
-      children: [
-        { path: "all_requests", element: <All_requests /> },
-        { path: "location", element: <Location_workerside /> },
-        { path: "edit", element: <Edit_worker /> },
-        { path: "history", element: <History_worker /> },
-      ],
+    },
+    {
+      path: "/all_requests",
+      element: (
+        <ProtectedRoute isAuthenticated={isWorkerAuthenticated}>
+          <All_requests />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/location_worker",
+      element: (
+        <ProtectedRoute isAuthenticated={isWorkerAuthenticated}>
+          <Location_workerside />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/location_user",
+      element: (
+        <ProtectedRoute_customer isAuthenticated={isCustomerAuthenticated}>
+          <Location_userside />
+        </ProtectedRoute_customer>
+      ),
+    },
+    {
+      path: "/edit_worker",
+      element: (
+        <ProtectedRoute isAuthenticated={isWorkerAuthenticated}>
+          <Edit_worker />
+        </ProtectedRoute>
+      ),
+    },
+    {
+      path: "/edit_customer",
+      element: (
+        <ProtectedRoute_customer isAuthenticated={isCustomerAuthenticated}>
+          <Edit_customer />
+        </ProtectedRoute_customer>
+      ),
+    },
+    {
+      path: "/history_customer",
+      element: (
+        <ProtectedRoute_customer isAuthenticated={isCustomerAuthenticated}>
+          <History_customer />
+        </ProtectedRoute_customer>
+      ),
+    },
+    {
+      path: "/history_worker",
+      element: (
+        <ProtectedRoute isAuthenticated={isWorkerAuthenticated}>
+          <History_worker />
+        </ProtectedRoute>
+      ),
     },
   ]);
 
