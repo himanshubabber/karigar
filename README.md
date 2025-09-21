@@ -1,6 +1,5 @@
 # Karigar
 
-**Link :- https://karigar-mu.vercel.app/**
 **Karigar** is a full-stack service marketplace platform that connects customers with skilled workers (plumbers, electricians, carpenters, etc.). Customers can easily post service requests, and workers can accept jobs, share their live location, and manage the entire job lifecycle.
 
 ---
