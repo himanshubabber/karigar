@@ -6,6 +6,7 @@ import {
   RouterProvider,
 } from "react-router-dom";
 import { Analytics } from "@vercel/analytics/react"
+import { SpeedInsights } from "@vercel/speed-insights/react"
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
@@ -153,6 +154,8 @@ createRoot(document.getElementById("root")).render(
         <CustomerProvider>
           <WorkerProvider>
             <AppRouter />
+            <Analytics />
+            <SpeedInsights />
           </WorkerProvider>
         </CustomerProvider>
       </ServiceReqProvider>
