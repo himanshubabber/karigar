@@ -9,10 +9,21 @@ import { Transaction } from "../models/transaction.model.js";
 import crypto from "crypto";
 
 
-const razorpayInstance = new razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
+// Lazy-load Razorpay instance to avoid crashes when env vars are missing
+let razorpayInstance = null;
+
+const getRazorpayInstance = () => {
+  if (!razorpayInstance) {
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      throw new ApiError(500, "Razorpay credentials not configured");
+    }
+    razorpayInstance = new razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+  }
+  return razorpayInstance;
+};
 
 const createOrder = asyncHandler(async (req, res) => {
   const { serviceRequestId } = req.params;
@@ -40,7 +51,8 @@ const createOrder = asyncHandler(async (req, res) => {
     receipt: `receipt_${new Date().getTime()}`,
   };
 
-  const order = await razorpayInstance.orders.create(options);
+  const instance = getRazorpayInstance();
+  const order = await instance.orders.create(options);
   if (!order) {
     throw new ApiError(500, "Failed to create order");
   }
@@ -73,7 +85,8 @@ const createOrderForWorker = asyncHandler(async (req, res) => {
     receipt: `receipt_${new Date().getTime()}`,
   };
 
-  const order = await razorpayInstance.orders.create(options);
+  const instance = getRazorpayInstance();
+  const order = await instance.orders.create(options);
   if (!order) {
     throw new ApiError(500, "Failed to create order");
   }

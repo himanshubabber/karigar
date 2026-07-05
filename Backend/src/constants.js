@@ -1,5 +1,5 @@
 const platformCharge=9
-const DB_NAME="KarigarDB"
+const DB_NAME="test"
 const visitingCharge=49
 const SEARCH_RADIUS_METERS = 5000; // 5 km
 export {

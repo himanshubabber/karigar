@@ -8,6 +8,7 @@ import customerRouter from "./src/routes/customer.route.js";
 import workerRouter from "./src/routes/worker.route.js";
 import serviceRequestRouter from "./src/routes/serviceRequest.route.js";
 import paymentRouter from "./src/routes/payment.route.js";
+import adminRouter from "./src/routes/admin.route.js";
 import { ApiError } from "./src/utils/ApiError.js";
 
 
@@ -40,11 +41,27 @@ await connectDB();
 // }));
 
 
+const allowedOrigins = [
+  process.env.CORS_ORIGIN,
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "http://localhost:5174",
+  "http://127.0.0.1:5174",
+  "http://localhost:8000",
+  "http://127.0.0.1:8000",
+].filter(Boolean);
+
 app.use(cors({
-  origin: 'https://karigar-mu.vercel.app',
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS not allowed for origin ${origin}`));
+    }
+  },
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true, 
+  credentials: true,
 }));
 
 //  app.options("*", cors());
@@ -78,6 +95,7 @@ app.get("/api/ping", (req, res) => res.json({ ping: "pong", time: new Date() }))
 
 app.use("/api/v1/customer", customerRouter);
 app.use("/api/v1/worker", workerRouter);
+app.use("/api/v1/admin", adminRouter);
 app.use("/api/v1/payment", paymentRouter);
 app.use("/api/v1/serviceRequest", serviceRequestRouter);
 
