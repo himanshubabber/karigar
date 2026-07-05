@@ -108,13 +108,18 @@ const AdminDashboard = () => {
   };
 
   const fetchMessages = async () => {
-    try {
-      const res = await axios.get(`${apiBaseUrl}/api/v1/admin/messages`, { headers: authHeaders, withCredentials: true });
-      setMessages(res.data?.data || []);
-    } catch (err) {
-      console.error("Failed to fetch messages", err);
-    }
-  };
+  try {
+    const res = await axios.get(`${apiBaseUrl}/api/v1/admin/messages`, { 
+      headers: authHeaders, 
+      withCredentials: true 
+    });
+    // Check if the data is in 'data' or 'messages'
+    const messageList = res.data?.data || res.data?.messages || [];
+    setMessages(messageList);
+  } catch (err) {
+    console.error("Failed to fetch messages", err.response?.data || err.message);
+  }
+};
 
   const fetchSummary = async () => {
     setLoading(true);
@@ -223,20 +228,22 @@ const AdminDashboard = () => {
   };
 
   const handleMessageSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      await axios.post(
-        `${apiBaseUrl}/api/v1/admin/message`,
-        messageForm,
-        { headers: authHeaders, withCredentials: true }
-      );
-      alert("Message sent successfully");
-      setMessageForm({ toEmail: "", subject: "", body: "" });
-    } catch (err) {
-      console.error(err);
-      alert("Send message failed: " + (err.response?.data?.message || err.message));
-    }
-  };
+  e.preventDefault();
+  try {
+    await axios.post(`${apiBaseUrl}/api/v1/admin/message`, messageForm, { 
+      headers: authHeaders, 
+      withCredentials: true 
+    });
+    alert("Message sent successfully");
+    setMessageForm({ toEmail: "", subject: "", body: "" });
+    
+    // CRITICAL: Refresh the list after sending
+    fetchMessages(); 
+  } catch (err) {
+    console.error(err);
+    alert("Send message failed: " + (err.response?.data?.message || err.message));
+  }
+};
 
   const handleBlockSubmit = async (e) => {
     e.preventDefault();
@@ -364,132 +371,134 @@ const AdminDashboard = () => {
 
     if (activeTab === "database") {
       return (
-        <div className="mb-4">
-              <h5>Customers</h5>
-              <div className="table-responsive">
-                <table className="table table-sm table-striped">
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Email</th>
-                      <th>Phone</th>
-                      <th>Address</th>
-                      <th>Blocked Until</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users.customers?.map((item) => (
-                      <tr key={item._id}>
-                        <td>{item.fullName}</td>
-                        <td>{item.email}</td>
-                        <td>{item.phone}</td>
-                        <td>{item.address}</td>
-                        <td>{item.suspendedUntil ? new Date(item.suspendedUntil).toLocaleString() : "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+        <div className="row">
+          {/* Sidebar: Stats Panel */}
+          <div className="col-md-3">
+            {renderStatsPanel()}
+          </div>
 
-              <h5 className="mt-4">Workers</h5>
-              <div className="table-responsive">
-                <table className="table table-sm table-striped">
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Email</th>
-                      <th>Phone</th>
-                      <th>Category</th>
-                      <th>Blocked Until</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users.workers?.map((item) => (
-                      <tr key={item._id}>
-                        <td>{item.fullName}</td>
-                        <td>{item.email}</td>
-                        <td>{item.phone}</td>
-                        <td>{item.workingCategory?.join(", ") || "—"}</td>
-                        <td>{item.suspendedUntil ? new Date(item.suspendedUntil).toLocaleString() : "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+          {/* Main Content: Tables and Forms */}
+          <div className="col-md-9">
+            <div className="d-flex justify-content-between align-items-center mb-4">
+              <div>
+                <h4>Database</h4>
+                <p className="text-muted mb-0">Manage users and service requests.</p>
               </div>
+              <button className="btn btn-outline-primary btn-sm" onClick={handleSeedDemoData}>
+                Seed Demo Data
+              </button>
+            </div>
 
-              <h5 className="mt-4">Service Requests</h5>
-              <div className="table-responsive">
-                <table className="table table-sm table-striped">
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Category</th>
-                      <th>Order Status</th>
-                      <th>Job Status</th>
-                      <th>Quote</th>
-                      <th>Customer</th>
-                      <th>Worker</th>
-                      <th>Created</th>
+            <h5>Customers</h5>
+            <div className="table-responsive mb-4">
+              <table className="table table-sm table-striped">
+                <thead>
+                  <tr>
+                    <th>Name</th><th>Email</th><th>Phone</th><th>Address</th><th>Blocked Until</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.customers?.map((item) => (
+                    <tr key={item._id}>
+                      <td>{item.fullName}</td>
+                      <td>{item.email}</td>
+                      <td>{item.phone}</td>
+                      <td>{item.address}</td>
+                      <td>{item.suspendedUntil ? new Date(item.suspendedUntil).toLocaleString() : "—"}</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {users.serviceRequests?.length > 0 ? (
-                      users.serviceRequests.map((item) => (
-                        <tr key={item._id}>
-                          <td className="text-truncate" style={{ maxWidth: 160 }}>{item._id}</td>
-                          <td>{item.category || "—"}</td>
-                          <td>{item.orderStatus || "—"}</td>
-                          <td>{item.jobStatus || "—"}</td>
-                          <td>{item.quoteAmount != null ? `₹${item.quoteAmount}` : "—"}</td>
-                          <td>{item.customerId?._id || item.customerId || "—"}</td>
-                          <td>{item.workerId?._id || item.workerId || "—"}</td>
-                          <td>{new Date(item.createdAt).toLocaleString()}</td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="8" className="text-center text-muted py-3">No service requests available.</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <h5 className="mt-4">Workers</h5>
+            <div className="table-responsive mb-4">
+              <table className="table table-sm table-striped">
+                <thead>
+                  <tr>
+                    <th>Name</th><th>Email</th><th>Phone</th><th>Category</th><th>Blocked Until</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.workers?.map((item) => (
+                    <tr key={item._id}>
+                      <td>{item.fullName}</td>
+                      <td>{item.email}</td>
+                      <td>{item.phone}</td>
+                      <td>{item.workingCategory?.join(", ") || "—"}</td>
+                      <td>{item.suspendedUntil ? new Date(item.suspendedUntil).toLocaleString() : "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <h5 className="mt-4">Service Requests</h5>
+            <div className="table-responsive mb-4">
+              <table className="table table-sm table-striped">
+                <thead>
+                  <tr>
+                    <th>ID</th><th>Category</th><th>Status</th><th>Quote</th><th>Customer</th><th>Worker</th><th>Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.serviceRequests?.map((item) => (
+                    <tr key={item._id}>
+                      <td className="text-truncate" style={{ maxWidth: 100 }}>{item._id}</td>
+                      <td>{item.category || "—"}</td>
+                      <td>{item.orderStatus || "—"}</td>
+                      <td>{item.quoteAmount ? `₹${item.quoteAmount}` : "—"}</td>
+                      <td>{item.customerId?._id || "—"}</td>
+                      <td>{item.workerId?._id || "—"}</td>
+                      <td>{new Date(item.createdAt).toLocaleDateString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="table-responsive mb-4">
+          <table className="table table-sm table-striped">
+            <thead><tr><th>To</th><th>Subject</th><th>Body</th><th>Sent By</th><th>Sent At</th></tr></thead>
+            <tbody>
+              {messages.length > 0 ? messages.map((m) => (<tr key={m._id}><td>{m.toEmail}</td><td>{m.subject}</td><td style={{maxWidth: 200, overflow: 'hidden'}}>{m.body}</td><td>{m.sentBy}</td><td>{new Date(m.createdAt).toLocaleString()}</td></tr>)) : <tr><td colSpan="5" className="text-center">No messages found.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+
+            {/* Forms Row: Placed side-by-side */}
+            <div className="row mt-4">
+              <div className="col-md-6">
+                <div className="card p-3">
+                  <h5>Comment on Entity</h5>
+                  <form onSubmit={handleCommentSubmit}>
+                    <select className="form-select mb-2" onChange={(e) => setSelectedEntity({...selectedEntity, entityType: e.target.value})}>
+                      <option value="customer">Customer</option>
+                      <option value="worker">Worker</option>
+                      <option value="serviceRequest">Service Request</option>
+                    </select>
+                    <input className="form-control mb-2" placeholder="Entity ID" value={selectedEntity.entityId} onChange={(e) => setSelectedEntity({...selectedEntity, entityId: e.target.value})} />
+                    <textarea className="form-control mb-2" placeholder="Comment" value={selectedEntity.comment} onChange={(e) => setSelectedEntity({...selectedEntity, comment: e.target.value})} />
+                    <button className="btn btn-secondary btn-sm">Submit Comment</button>
+                  </form>
+                </div>
               </div>
-
-              <h5 className="mt-4">Message History</h5>
-              <div className="table-responsive">
-                <table className="table table-sm table-striped">
-                  <thead>
-                    <tr>
-                      <th>To</th>
-                      <th>Subject</th>
-                      <th>Body</th>
-                      <th>Sent By</th>
-                      <th>Sent At</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {messages.length > 0 ? (
-                      messages.map((m) => (
-                        <tr key={m._id}>
-                          <td>{m.toEmail}</td>
-                          <td>{m.subject}</td>
-                          <td style={{ maxWidth: 300, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.body}</td>
-                          <td>{m.sentBy}</td>
-                          <td>{new Date(m.createdAt).toLocaleString()}</td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="5" className="text-center text-muted py-3">No messages found.</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+              <div className="col-md-6">
+                <div className="card p-3">
+                  <h5>Edit Entity</h5>
+                  <form onSubmit={handleEditSubmit}>
+                    <input className="form-control mb-2" placeholder="Entity ID" value={selectedEntity.entityId} onChange={(e) => setSelectedEntity({...selectedEntity, entityId: e.target.value})} />
+                    <input className="form-control mb-2" placeholder="Field (e.g. quoteAmount)" value={selectedEntity.editField} onChange={(e) => setSelectedEntity({...selectedEntity, editField: e.target.value})} />
+                    <input className="form-control mb-2" placeholder="New Value" value={selectedEntity.editValue} onChange={(e) => setSelectedEntity({...selectedEntity, editValue: e.target.value})} />
+                    <button className="btn btn-secondary btn-sm">Submit Edit</button>
+                  </form>
+                </div>
               </div>
             </div>
+          </div>
+        </div>
       );
     }
-
     if (activeTab === "api") {
       return (
         <div>
