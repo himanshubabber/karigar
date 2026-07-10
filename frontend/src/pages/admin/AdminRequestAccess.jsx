@@ -6,7 +6,7 @@ const AdminRequestAccess = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: "", requestedRole: "viewer", reason: "" });
   const [loading, setLoading] = useState(false);
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "https://karigarbackend.vercel.app";
+  const apiBaseUrl =  "https://karigarbackend-j5f24zmau-himanshubabbers-projects.vercel.app" || import.meta.env.VITE_API_URL || "https://karigarbackend.vercel.app";
 
   const handleSubmit = async (event) => {
     event.preventDefault();
