@@ -54,16 +54,10 @@ const allowedOrigins = [
 ].filter(Boolean);
 
 app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error(`CORS not allowed for origin ${origin}`));
-    }
-  },
+  origin: "*", // Allows requests from any origin
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true,
+  credentials: false // IMPORTANT: When origin is "*", credentials must be false
 }));
 
 //  app.options("*", cors());
