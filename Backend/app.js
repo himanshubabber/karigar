@@ -41,26 +41,19 @@ await connectDB();
 // }));
 
 
-const allowedOrigins = [
-  process.env.CORS_ORIGIN,
-  "http://localhost:5173",
-  "http://127.0.0.1:5173",
-  "http://localhost:5174",
-  "http://127.0.0.1:5174",
-  "http://localhost:8000",
-  "http://127.0.0.1:8000",
-  "https://karigar-nvwrmq8ir-himanshubabbers-projects.vercel.app",
-  "https://karigar-mu.vercel.app"
-].filter(Boolean);
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*"); // Or specific origin
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
-app.use(cors({
-  origin: "*", // Allows requests from any origin
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: false // IMPORTANT: When origin is "*", credentials must be false
-}));
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+  next();
+});
 
-app.options("*", cors());
+// Everything else (cors, routes, etc) goes AFTER this
+app.use(cors());
 
 /*
 const corsOptions = {
