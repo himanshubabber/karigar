@@ -49,6 +49,8 @@ const allowedOrigins = [
   "http://127.0.0.1:5174",
   "http://localhost:8000",
   "http://127.0.0.1:8000",
+  "https://karigar-nvwrmq8ir-himanshubabbers-projects.vercel.app",
+  "https://karigar-mu.vercel.app"
 ].filter(Boolean);
 
 app.use(cors({
