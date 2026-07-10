@@ -60,7 +60,7 @@ app.use(cors({
   credentials: false // IMPORTANT: When origin is "*", credentials must be false
 }));
 
-//  app.options("*", cors());
+app.options("*", cors());
 
 /*
 const corsOptions = {
