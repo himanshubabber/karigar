@@ -29,7 +29,7 @@ const AdminDashboard = () => {
   const [selectedEntity, setSelectedEntity] = useState({ entityType: "customer", entityId: "", comment: "", editField: "", editValue: "" });
 
   const authHeaders = { Authorization: `Bearer ${token}` };
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "https://karigarbackend.vercel.app";
+  const apiBaseUrl = "https://karigarbackend-j5f24zmau-himanshubabbers-projects.vercel.app" || import.meta.env.VITE_API_URL || "https://karigarbackend.vercel.app";
   const apiSuggestions = [
     // Admin helpers
     { label: "Get Summary", url: "/api/v1/admin/summary", method: "GET", sample: "" },
