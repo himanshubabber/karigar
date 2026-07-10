@@ -8,6 +8,7 @@ import customerRouter from "./src/routes/customer.route.js";
 import workerRouter from "./src/routes/worker.route.js";
 import serviceRequestRouter from "./src/routes/serviceRequest.route.js";
 import paymentRouter from "./src/routes/payment.route.js";
+import adminRouter from "./src/routes/admin.route.js";
 import { ApiError } from "./src/utils/ApiError.js";
 
 
@@ -40,14 +41,19 @@ await connectDB();
 // }));
 
 
-app.use(cors({
-  origin: 'https://karigar-mu.vercel.app',
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true, 
-}));
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*"); // Or specific origin
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
-//  app.options("*", cors());
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+  next();
+});
+
+// Everything else (cors, routes, etc) goes AFTER this
+app.use(cors());
 
 /*
 const corsOptions = {
@@ -78,6 +84,7 @@ app.get("/api/ping", (req, res) => res.json({ ping: "pong", time: new Date() }))
 
 app.use("/api/v1/customer", customerRouter);
 app.use("/api/v1/worker", workerRouter);
+app.use("/api/v1/admin", adminRouter);
 app.use("/api/v1/payment", paymentRouter);
 app.use("/api/v1/serviceRequest", serviceRequestRouter);
 

@@ -26,23 +26,31 @@ import Signin_customer from './pages/customer/Signin_customer.jsx';
 import Edit_customer from './components/customer/Edit_customer.jsx';
 import History_customer from './components/customer/History_customer.jsx';
 import History_worker from './components/worker/History_worker.jsx';
+import Signin_admin from './pages/admin/Signin_admin.jsx';
+import AdminDashboard from './pages/admin/AdminDashboard.jsx';
+import AdminMain from './pages/admin/AdminMain.jsx';
+import AdminRequestAccess from './pages/admin/AdminRequestAccess.jsx';
 
 import { CustomerProvider, useCustomer } from './Context/Customer_context.jsx';
 import { ServiceReqProvider } from './Context/Service_req_context.jsx';
 import { OtpProvider } from './Context/Otp_context.jsx';
 import { WorkerProvider, useWorker } from './Context/Worker_context.jsx';
+import { AdminProvider, useAdmin } from './Context/Admin_context.jsx';
 
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import ProtectedRoute_customer from './components/ProtectedRoute_customer.jsx';
+import ProtectedRoute_admin from './components/ProtectedRoute_admin.jsx';
 import { GoogleOAuthProvider } from "@react-oauth/google";
 
 
 function AppRouter() {
   const { token: customerToken } = useCustomer();
   const { token: workerToken } = useWorker();
+  const { token: adminToken } = useAdmin();
 
   const isCustomerAuthenticated = Boolean(customerToken);
   const isWorkerAuthenticated = Boolean(workerToken);
+  const isAdminAuthenticated = Boolean(adminToken);
 
   const router = createBrowserRouter([
     { path: "/", element: <Landing_page /> },
@@ -140,6 +148,26 @@ function AppRouter() {
         </ProtectedRoute>
       ),
     },
+    {
+      path: "/signin_admin",
+      element: <Signin_admin />,
+    },
+    {
+      path: "/admin",
+      element: <AdminMain />,
+    },
+    {
+      path: "/admin/request-access",
+      element: <AdminRequestAccess />,
+    },
+    {
+      path: "/admin/dashboard",
+      element: (
+        <ProtectedRoute_admin isAuthenticated={isAdminAuthenticated}>
+          <AdminDashboard />
+        </ProtectedRoute_admin>
+      ),
+    },
   ]);
 
   return <RouterProvider router={router} />;
@@ -152,7 +180,9 @@ createRoot(document.getElementById("root")).render(
       <ServiceReqProvider>
         <CustomerProvider>
           <WorkerProvider>
-            <AppRouter />
+            <AdminProvider>
+              <AppRouter />
+            </AdminProvider>
           </WorkerProvider>
         </CustomerProvider>
       </ServiceReqProvider>
