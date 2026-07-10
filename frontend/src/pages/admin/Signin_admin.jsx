@@ -13,7 +13,7 @@ const Signin_admin = () => {
   const [authMode, setAuthMode] = useState("google");
   const [form, setForm] = useState({ email: "", password: "" });
 
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "https://karigarbackend.vercel.app";
+  const apiBaseUrl = "https://karigarbackend-j5f24zmau-himanshubabbers-projects.vercel.app" || import.meta.env.VITE_API_URL || "https://karigarbackend.vercel.app";
 
   useEffect(() => {
     if (token) {
